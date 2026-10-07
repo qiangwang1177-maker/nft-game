@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>QUANTUM OVERLOAD // HARDCORE BULLET HELL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>QUANTUM OVERLOAD // BASE BULLET HELL</title>
   <style>
     * {
       box-sizing: border-box;
@@ -11,1099 +11,1432 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none;
-      -webkit-touch-callout: none;
     }
-    body {
-      background: #030712;
-      color: #00f0ff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Courier New", monospace;
+    body, html {
+      width: 100%;
+      height: 100%;
       overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background-color: #030712;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      color: #fff;
+      touch-action: none;
     }
-    #gameCanvas {
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #0c182b 0%, #030712 100%);
+    }
+    canvas#gameCanvas {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-    }
-    .top-bar {
-      position: absolute;
-      top: calc(10px + env(safe-area-inset-top));
-      left: 12px;
-      right: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 15;
-      pointer-events: none;
-    }
-    .top-controls {
-      display: flex;
-      gap: 6px;
-      pointer-events: auto;
-    }
-    .btn-nav {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(0, 240, 255, 0.4);
-      color: #00f0ff;
-      font-size: 11px;
-      font-weight: bold;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      transition: all 0.2s;
-    }
-    .btn-nav:active {
-      background: #00f0ff;
-      color: #030712;
+      display: block;
     }
 
-    .xp-container {
+    /* 顶部 HUD */
+    .hud {
       position: absolute;
-      top: calc(46px + env(safe-area-inset-top));
-      left: 16px;
-      right: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      z-index: 10;
-      pointer-events: none;
-    }
-    .xp-bar-bg {
-      width: 100%;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
-      overflow: hidden;
-      border: 1px solid rgba(0, 240, 255, 0.2);
-    }
-    .xp-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #00f0ff, #00ff66);
-      box-shadow: 0 0 8px #00ff66;
-      transition: width 0.1s ease;
-    }
-    .xp-labels {
+      top: env(safe-area-inset-top, 12px);
+      left: 0;
+      right: 0;
+      padding: 8px 14px;
       display: flex;
       justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hud-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .score-badge {
+      font-size: 26px;
+      font-weight: 900;
+      color: #38bdf8;
+      text-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+    }
+    .best-badge {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .wallet-badge {
       font-size: 10px;
-      color: #94a3b8;
+      color: #38bdf8;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      width: fit-content;
+      margin-top: 2px;
       font-family: monospace;
     }
 
-    .stats-card {
-      position: absolute;
-      top: calc(68px + env(safe-area-inset-top));
-      left: 16px;
-      right: 16px;
+    .hud-right {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      pointer-events: none;
-      z-index: 10;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
     }
-    .stat-badge {
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(0, 240, 255, 0.25);
-      padding: 4px 10px;
-      border-radius: 6px;
+
+    /* 显眼的血量/护盾条 */
+    .hp-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 5px 8px;
+      border-radius: 20px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .hp-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #38bdf8;
+      margin-right: 2px;
+    }
+    .hp-bar-cell {
+      width: 22px;
+      height: 10px;
+      border-radius: 3px;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      transition: all 0.2s ease;
+    }
+    .hp-bar-cell.lost {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      box-shadow: none;
+    }
+
+    /* EMP 能量条 */
+    .emp-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .emp-bar-wrap {
+      width: 90px;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #38bdf8;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .emp-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+      box-shadow: 0 0 8px #38bdf8;
+      transition: width 0.1s ease;
+    }
+
+    /* 语言切换按钮 (右上角) */
+    .lang-toggle-btn {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
       backdrop-filter: blur(4px);
     }
 
-    .mobile-controls {
-      position: absolute;
-      bottom: calc(18px + env(safe-area-inset-bottom));
-      left: 20px;
-      right: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      z-index: 15;
-      pointer-events: none;
+    /* 弹出层通用 */
+    .hidden {
+      display: none !important;
     }
-    .action-circle-btn {
-      pointer-events: auto;
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      background: rgba(15, 23, 42, 0.85);
-      border: 2px solid #00f0ff;
-      color: #00f0ff;
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      font-size: 10px;
-      font-weight: bold;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-      cursor: pointer;
-      touch-action: manipulation;
+      padding: 24px;
+      z-index: 20;
+      text-align: center;
     }
-    .action-circle-btn:active {
-      transform: scale(0.92);
-      background: #00f0ff;
-      color: #030712;
+    .title-logo {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 50%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+      text-transform: uppercase;
     }
-    .action-circle-btn.emp-ready {
-      border-color: #00ff66;
-      color: #00ff66;
-      box-shadow: 0 0 20px rgba(0, 255, 102, 0.6);
-      animation: pulse 0.8s infinite alternate;
+    .title-sub {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #64748b;
+      margin-bottom: 20px;
+      font-weight: 700;
     }
 
-    .overlay {
-      position: absolute;
-      z-index: 30;
+    /* 指导卡片 */
+    .guide-modal {
+      width: 100%;
+      max-width: 360px;
+      max-height: 60vh;
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: left;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      margin-bottom: 16px;
+    }
+    .guide-section {
+      margin-bottom: 12px;
+    }
+    .guide-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #38bdf8;
+      margin-bottom: 3px;
+    }
+    .guide-content {
+      font-size: 11.5px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+    .guide-content strong {
+      color: #fbbf24;
+    }
+
+    /* 钱包连接引导弹窗 */
+    .wallet-modal-card {
+      width: 100%;
+      max-width: 330px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #38bdf8;
+      border-radius: 16px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      margin-bottom: 16px;
+    }
+    .wallet-app-btn {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
       align-items: center;
-      background: rgba(3, 7, 18, 0.96);
-      border: 1px solid rgba(0, 240, 255, 0.4);
-      padding: 24px 20px;
-      border-radius: 16px;
-      box-shadow: 0 0 50px rgba(0, 240, 255, 0.25);
-      max-width: 440px;
-      width: 90%;
-      text-align: center;
-      backdrop-filter: blur(16px);
-      max-height: 90vh;
-      overflow-y: auto;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .wallet-app-btn:active {
+      background: rgba(56, 189, 248, 0.2);
     }
 
-    .upgrade-list {
+    /* 升级选择面板 */
+    .upgrade-panel {
       display: flex;
       flex-direction: column;
       gap: 10px;
       width: 100%;
-      margin: 14px 0;
+      max-width: 320px;
+      margin: 15px 0;
     }
-    .upgrade-card {
+    .upgrade-btn {
       background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      padding: 12px;
-      border-radius: 10px;
+      border: 1px solid #38bdf8;
+      border-radius: 12px;
+      padding: 12px 14px;
       text-align: left;
       cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 12px;
     }
-    .upgrade-card:active, .upgrade-card:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: #00f0ff;
-      transform: translateY(-2px);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-    }
-    .upgrade-icon {
-      font-size: 24px;
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 240, 255, 0.1);
-      border-radius: 8px;
+    .upgrade-btn:active {
+      transform: scale(0.97);
+      background: rgba(56, 189, 248, 0.2);
     }
 
-    .btn-action {
-      width: 100%;
-      padding: 13px;
-      background: #00f0ff;
+    /* 通用按钮 */
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      color: white;
       border: none;
-      color: #030712;
-      font-size: 14px;
-      font-weight: 900;
-      letter-spacing: 1px;
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 800;
+      border-radius: 40px;
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
       cursor: pointer;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
-      margin-top: 10px;
-      font-family: inherit;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 10px;
+    }
+    .btn-primary:active { transform: scale(0.96); }
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.85);
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      padding: 12px 24px;
+      font-size: 13.5px;
+      font-weight: 700;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 8px;
+    }
+    .btn-share {
+      background: #000;
+      color: #fff;
+      border: 1px solid #38bdf8;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 800;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
     }
-    .btn-action:active {
-      transform: scale(0.98);
-      background: #ffffff;
-    }
-    .btn-secondary {
-      background: rgba(121, 40, 202, 0.25);
-      border: 1px solid #c084fc;
-      color: #c084fc;
-      box-shadow: 0 0 15px rgba(121, 40, 202, 0.3);
-    }
-    .btn-twitter {
-      background: rgba(29, 155, 240, 0.2);
-      border: 1px solid #1d9bf0;
-      color: #1d9bf0;
-      box-shadow: 0 0 15px rgba(29, 155, 240, 0.3);
+    .btn-download {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 800;
+      border-radius: 40px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 10px;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
     }
 
-    /* 醒目警报横幅 */
-    .danger-banner {
-      position: absolute;
-      top: 35%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 18px;
-      font-weight: 900;
-      color: #ff0055;
-      text-shadow: 0 0 20px #ff0055;
-      letter-spacing: 2px;
-      z-index: 12;
-      pointer-events: none;
-      display: none;
-      text-align: center;
-      animation: alertPulse 0.4s infinite alternate;
-      background: rgba(0,0,0,0.6);
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1px solid #ff0055;
-    }
-    @keyframes alertPulse {
-      0% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.95); }
-      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-    }
-
-    /* 顶部 Toast 提示 */
-    .toast-msg {
-      position: absolute;
-      top: calc(85px + env(safe-area-inset-top));
-      left: 50%;
-      transform: translateX(-50%);
-      background: #00f0ff;
-      color: #030712;
-      font-weight: bold;
-      font-size: 11px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
+    /* 勋章弹窗 */
+    #cardModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.94);
       z-index: 50;
-      display: none;
-      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+    #generatedCard {
+      max-width: 88%;
+      max-height: 58vh;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      margin-bottom: 14px;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
 
-  <div class="danger-banner" id="dangerBanner">⚠️ ANOMALY DETECTED ⚠️</div>
-  <div class="toast-msg" id="toastMsg">TWEET COPIED TO CLIPBOARD!</div>
-
-  <!-- 顶部状态栏 -->
-  <div class="top-bar">
-    <div style="font-size:11px; font-weight:bold; color:#00f0ff; letter-spacing:1px;" id="gameLogo">QUANTUM OVERLOAD</div>
-    <div class="top-controls">
-      <button class="btn-nav" id="langBtn" onclick="toggleLanguage()">LANG: EN</button>
-      <button class="btn-nav" id="soundBtn" onclick="toggleSound()">AUDIO: ON</button>
-      <button class="btn-nav" id="walletBtn" onclick="connectWallet()">BASE</button>
-    </div>
-  </div>
-
-  <!-- 经验条 -->
-  <div class="xp-container">
-    <div class="xp-labels">
-      <span id="levelLabel">LVL 1 PILOT</span>
-      <span id="xpLabel">EXP 0 / 60</span>
-    </div>
-    <div class="xp-bar-bg">
-      <div class="xp-bar-fill" id="xpFill"></div>
-    </div>
-  </div>
-
-  <!-- 仪表盘 -->
-  <div class="stats-card">
-    <div class="stat-badge">
-      <span style="color:#94a3b8;" id="labelYield">YIELD:</span> <span id="scoreDisplay" style="color:#00f0ff;">0</span>
-    </div>
-    <div class="stat-badge">
-      <span style="color:#94a3b8;" id="labelHull">HULL:</span> <span id="healthDisplay" style="color:#00ff66;">100%</span>
-    </div>
-  </div>
-
-  <!-- 底部动作按键 -->
-  <div class="mobile-controls">
-    <div class="action-circle-btn" id="skillBtn" onclick="triggerSkill()">
-      <span style="font-size:14px;">⚡</span>
-      <span id="skillBtnText">PHASE</span>
-    </div>
-    <div class="action-circle-btn" id="empBtn" onclick="triggerEmp()">
-      <span style="font-size:14px;">💥</span>
-      <span id="empBtnText">EMP 0%</span>
-    </div>
-  </div>
-
-  <!-- 启动 & 结算弹窗 -->
-  <div class="overlay" id="startOverlay">
-    <h2 id="modalTitle" style="font-size: 20px; letter-spacing: 2px; margin-bottom: 4px;">QUANTUM OVERLOAD</h2>
-    <p id="modalSubtitle" style="font-size: 10px; color: #94a3b8; letter-spacing: 1px;">BASE ECOSYSTEM BULLET HELL</p>
-    
-    <div id="instructionsBox" style="font-size: 11px; color:#cbd5e1; text-align:left; margin: 12px 0; line-height: 1.6; background: rgba(255,255,255,0.03); padding:10px; border-radius:8px; width:100%;">
-      <!-- 动态注入语言 -->
-    </div>
-
-    <div id="web3Info" style="display:none; width:100%; margin-bottom:8px; font-size:11px; background:rgba(0,240,255,0.05); padding:8px; border-radius:6px; border:1px dashed rgba(0,240,255,0.3);">
-      <div style="display:flex; justify-content:space-between;">
-        <span id="w3ScoreLabel">FINAL SCORE:</span>
-        <span id="finalScoreVal" style="color:#00f0ff; font-weight:bold;">0</span>
+    <!-- 顶部 HUD -->
+    <div class="hud">
+      <div class="hud-left">
+        <div class="score-badge" id="hudScore">0</div>
+        <div class="best-badge" id="hudBest">BEST: 0</div>
+        <div class="wallet-badge" id="hudWallet">WALLET: GUEST</div>
       </div>
-      <div style="display:flex; justify-content:space-between; margin-top:3px;">
-        <span id="w3PilotLabel">PILOT:</span>
-        <span id="pilotAddress" style="color:#00ff66;">0x...</span>
+      <div class="hud-right">
+        <!-- 语言切换 -->
+        <button class="lang-toggle-btn" id="langToggleBtn">🌐 EN / 中文</button>
+
+        <!-- 显眼生命/护盾能量槽 -->
+        <div class="hp-container">
+          <span class="hp-label">SHIELD</span>
+          <div class="hp-bar-cell" id="hpCell1"></div>
+          <div class="hp-bar-cell" id="hpCell2"></div>
+          <div class="hp-bar-cell" id="hpCell3"></div>
+        </div>
+
+        <!-- EMP 槽 -->
+        <div class="emp-container">
+          <div class="emp-bar-wrap">
+            <div class="emp-bar-fill" id="empBar"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <button class="btn-action" id="startBtn" onclick="startGame()">INITIATE PROTOCOL</button>
-    <button class="btn-action btn-twitter" id="twitterShareBtn" style="display:none;" onclick="shareToTwitter()">SHARE ON X (CLIPBOARD READY)</button>
-    <button class="btn-action btn-secondary" id="claimBadgeBtn" style="display:none;" onclick="signAndExportBadge()">EXPORT 4K BADGE</button>
-  </div>
+    <!-- 1. 游戏主菜单 -->
+    <div class="overlay" id="startOverlay">
+      <div class="title-logo">QUANTUM OVERLOAD</div>
+      <div class="title-sub" id="txtSubTitle">HARDCORE BULLET HELL // ON BASE 🔵</div>
 
-  <!-- 局内自选升级弹窗 -->
-  <div class="overlay" id="levelUpOverlay" style="display:none;">
-    <h3 id="upgradeModalTitle" style="color:#00ff66; font-size:18px; letter-spacing:2px;">⚡ QUANTUM EVOLUTION ⚡</h3>
-    <p id="upgradeModalSub" style="font-size:11px; color:#94a3b8; margin-top:2px;">SELECT 1 AUGMENTATION</p>
-    <div class="upgrade-list" id="upgradeCardsContainer"></div>
+      <button class="btn-primary" id="startBtn">🚀 开始过载 (START)</button>
+      <button class="btn-secondary" id="connectWalletBtn">🦊 连接真实 Web3 钱包</button>
+      <button class="btn-secondary" id="openGuideBtn">📖 新手指导 (HOW TO PLAY)</button>
+    </div>
+
+    <!-- 2. Web3 钱包选择/跳转弹窗 -->
+    <div class="overlay hidden" id="walletModal">
+      <div class="title-logo" style="font-size:20px; color:#38bdf8;" id="txtWalletTitle">CONNECT WEB3 WALLET</div>
+      <div class="title-sub" id="txtWalletSub">AUTHENTICATE PILOT ON BASE CHAIN</div>
+
+      <div class="wallet-modal-card">
+        <button class="wallet-app-btn" id="btnConnectInjected">
+          <span>⚡ 浏览器原生插件 / Injected</span>
+        </button>
+        <a class="wallet-app-btn" id="btnOpenOKX" target="_blank">
+          <span>⬛ 在 OKX 钱包中打开 (Open in OKX)</span>
+        </a>
+        <a class="wallet-app-btn" id="btnOpenMetaMask" target="_blank">
+          <span>🦊 在 MetaMask 中打开 (Open in MM)</span>
+        </a>
+      </div>
+
+      <button class="btn-secondary" id="closeWalletModalBtn">返回 (Back)</button>
+    </div>
+
+    <!-- 3. 新手指导面板 -->
+    <div class="overlay hidden" id="guideOverlay">
+      <div class="title-logo" style="font-size:22px; color:#38bdf8;" id="txtGuideHeader">特工操作协议</div>
+      <div class="title-sub">PILOT OPERATIONAL MANUAL</div>
+
+      <div class="guide-modal" id="guideContentBox">
+        <!-- 动态语言填充 -->
+      </div>
+
+      <button class="btn-primary" id="guideStartBtn">我学会了，立即开始！</button>
+      <button class="btn-secondary" id="closeGuideBtn">返回主页 (Back)</button>
+    </div>
+
+    <!-- 4. 肉鸽协议升级面板 -->
+    <div class="overlay hidden" id="upgradeOverlay">
+      <div class="title-logo" style="font-size:22px; color:#10b981;" id="txtUpgradeTitle">PROTOCOL UPGRADE</div>
+      <p style="font-size:12px; color:#94a3b8; margin-bottom:12px;" id="txtUpgradeDesc">选择一项核心子系统协议强化：</p>
+      <div class="upgrade-panel" id="upgradeList"></div>
+    </div>
+
+    <!-- 5. 结算面板 -->
+    <div class="overlay hidden" id="gameOverOverlay">
+      <div class="title-logo" style="font-size: 22px;" id="txtOverTitle">CORE DESTROYED</div>
+      <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;" id="txtFinalScoreLabel">FINAL OVERLOAD SCORE</div>
+      <div style="font-size: 42px; font-weight: 900; color: #38bdf8; text-shadow:0 0 15px #38bdf8; margin: 2px 0;" id="finalScoreText">0</div>
+      <div style="font-size: 13px; font-weight:800; color:#fbbf24; margin-bottom:16px;" id="finalRankBadge">APEX SURVIVOR</div>
+
+      <button class="btn-share" id="shareTwitterBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        <span id="txtShareBtn">在 X (推特) 晒分挑战</span>
+      </button>
+      <button class="btn-primary" id="saveMedalBtn">📸 铸造 4K 战绩勋章</button>
+      <button class="btn-secondary" id="restartBtn">🔄 REPLAY (重新过载)</button>
+    </div>
+
+    <!-- 6. 勋章弹窗 (修复保存问题) -->
+    <div id="cardModal" class="hidden">
+      <img id="generatedCard" alt="Combat Medal" />
+      <div style="font-size:12px; color:#94a3b8; margin:10px 0;" id="txtMedalTip">💡 点击下方绿色按钮一键下载勋章到相册！</div>
+      <a id="downloadMedalLink" download="quantum_overload_medal.png" class="btn-download">⬇️ 下载勋章到手机 (DOWNLOAD)</a>
+      <button class="btn-secondary" id="closeModalBtn" style="max-width:200px;">关闭 (Close)</button>
+    </div>
   </div>
 
   <script>
-    /* ==========================================================
-       1. 语言系统 (i18n)
-       ========================================================== */
-    let currentLang = 'en';
-    const i18n = {
-      en: {
-        langBtn: "LANG: EN",
-        title: "QUANTUM OVERLOAD",
-        subtitle: "BASE ECOSYSTEM BULLET HELL",
-        instructions: [
-          "• Drag to steer Core (<span style='color:#00ff66;'>Offset touch anti-blocking</span>)",
-          "• <b>Graze</b> hazards for massive points & rapid EMP charge",
-          "• Evade <span style='color:#ff0055;'>Red Plasma Bullets</span> & <b>Swarm Invasions</b>",
-          "• Level up to deploy <span style='color:#00f0ff;'>Drones / Tesla / Shields</span>"
-        ],
-        level: "LVL", exp: "EXP", yield: "YIELD:", hull: "HULL:",
-        startBtn: "INITIATE PROTOCOL", restartBtn: "RE-ENGAGE CORE",
-        meltdownTitle: "REACTOR COLLAPSED", meltdownSub: "Core melted down under extreme particle swarm",
-        empReady: "EMP READY", empCharging: "EMP", phase: "PHASE",
-        finalScore: "FINAL SCORE:", pilot: "PILOT:",
-        shareTwitter: "SHARE ON X (COPIES TEXT)", exportBadge: "EXPORT 4K BADGE",
-        swarmAlert: "⚠️ WARNING: SWARM INVASION INCOMING ⚠️",
-        bossAlert: "⚠️ TITAN COLOSSUS DETECTED ⚠️",
-        toastCopied: "✅ SCORE COPIED! PASTE ON X / TWITTER",
-        upgradeTitle: "⚡ QUANTUM EVOLUTION ⚡", upgradeSub: "SELECT 1 AUGMENTATION",
+    /* -------------------------------------------------------------
+       多语言字典系统 (i18n)
+    ------------------------------------------------------------- */
+    let curLang = localStorage.getItem('quantum_lang') || 'zh';
+
+    const I18N = {
+      zh: {
+        start: '🚀 开始过载 (START)',
+        wallet: '🦊 连接真实 Web3 钱包',
+        guide: '📖 新手指导 (HOW TO PLAY)',
+        subTitle: '硬核弹幕肉鸽 // BUILD ON BASE 🔵',
+        walletTitle: '连接真实 WEB3 钱包',
+        walletSub: '验证 BASE 链上特工身份',
+        guideHeader: '特工操作协议',
+        guideStart: '我学会了，立即开始！',
+        guideBack: '返回主页 (Back)',
+        upgradeTitle: '协议升级',
+        upgradeDesc: '选择一项核心子系统协议强化：',
+        overTitle: '量子核心损毁',
+        finalLabel: '本次过载最终得分',
+        shareBtn: '在 X (推特) 晒分挑战',
+        saveMedal: '📸 铸造 4K 战绩勋章',
+        replay: '🔄 REPLAY (重新过载)',
+        medalTip: '💡 点击下方绿色按钮一键下载勋章到相册！',
+        guideHtml: `
+          <div class="guide-section">
+            <div class="guide-title">🕹️ 1. 触控防遮挡移动</div>
+            <div class="guide-content">屏幕<strong>任意区域滑动</strong>操控核心。核心自动保持在手指上方 45px，绝不遮挡视野。</div>
+          </div>
+          <div class="guide-section">
+            <div class="guide-title">✨ 2. 精确判定与慢速子弹时间 (Graze)</div>
+            <div class="guide-content">核心正中<strong>极小红点</strong>为受创判定点！弹幕穿过外层蓝圈触发<strong>极限擦弹</strong>，激活<strong>慢动作子弹时间</strong>与 EMP 充能。</div>
+          </div>
+          <div class="guide-section">
+            <div class="guide-title">💥 3. 双击释放 EMP 奇点黑洞</div>
+            <div class="guide-content">EMP 能量槽满后<strong>快速双击屏幕</strong>，释放全屏冲击波并生成<strong>引力黑洞</strong>，吸附清空所有弹幕！</div>
+          </div>
+          <div class="guide-section">
+            <div class="guide-title">🛡️ 4. 显眼三段能量护盾</div>
+            <div class="guide-content">右上角提供 <strong>3 格核心护盾</strong>，被撞击后触发护盾破碎与 1.2 秒无敌时间，告别秒暴毙！</div>
+          </div>
+        `,
         upgrades: {
-          drone: { title: "Orbital Drone", desc: "Spawns an orbiting satellite firing laser pulses at foes", icon: "🛰️" },
-          tesla: { title: "Tesla Arc", desc: "Zaps nearest enemy with chain lightning every 2s", icon: "⚡" },
-          shield: { title: "Plasma Shield", desc: "Deploys an energy barrier blocking 1 fatal strike", icon: "🛡️" },
-          magnet: { title: "Hyper Magnet", desc: "Greatly expands attraction field for energy orbs", icon: "🧲" },
-          fission: { title: "Particle Fission", desc: "Destroyed enemies have 35% chance to drop extra orbs", icon: "💥" }
+          drone: { title: '🛸 部署聚能浮游机', desc: '召唤 1 台环绕核心的浮游机，主动发射青光激光拦截弹幕' },
+          tesla: { title: '⚡ 特斯拉电磁风暴', desc: '高频释放连锁闪电消灭红光子弹' },
+          shield: { title: '🛡️ 修复能量护盾', desc: '恢复 1 格护盾生命并扩增擦弹判定范围' }
         }
       },
-      zh: {
-        langBtn: "语言: 中文",
-        title: "量子超载 // 极限弹幕",
-        subtitle: "BASE 链原生高难度弹幕幸存者",
-        instructions: [
-          "• 单指滑动操控核心（<span style='color:#00ff66;'>指尖防遮挡优化</span>）",
-          "• <b>擦弹走位</b> 贴近危险可获超额加分并急速积攒 EMP",
-          "• 极限躲避 <span style='color:#ff0055;'>等离子散弹</span> 与 <b>全屏死士蜂群</b>",
-          "• 升级解锁 <span style='color:#00f0ff;'>伴生僚机 / 特斯拉电弧 / 护盾</span>"
-        ],
-        level: "创世等级", exp: "量子能", yield: "能量收获:", hull: "核心耐久:",
-        startBtn: "启动量子协议", restartBtn: "重启量子核心",
-        meltdownTitle: "反应堆已失稳解体", meltdownSub: "在反物质风暴与弹幕围剿中湮灭",
-        empReady: "EMP 就绪", empCharging: "EMP", phase: "相位虚化",
-        finalScore: "最终收获能:", pilot: "驾驶员:",
-        shareTwitter: "在 X 发推 (已复制文案)", exportBadge: "导出 4K 成绩勋章",
-        swarmAlert: "⚠️ 极度危险：高频死士虫群突袭 ⚠️",
-        bossAlert: "⚠️ 警告：虚空泰坦巨型首领降临 ⚠️",
-        toastCopied: "✅ 战绩推文已复制到剪贴板！可直接粘贴发推",
-        upgradeTitle: "⚡ 量子基因跃迁 ⚡", upgradeSub: "请选择一项核心武装升级：",
+      en: {
+        start: '🚀 ENGAGE (START)',
+        wallet: '🦊 Connect Web3 Wallet',
+        guide: '📖 HOW TO PLAY',
+        subTitle: 'HARDCORE BULLET HELL // ON BASE 🔵',
+        walletTitle: 'CONNECT WEB3 WALLET',
+        walletSub: 'AUTHENTICATE PILOT ON BASE CHAIN',
+        guideHeader: 'PILOT OPERATIONAL MANUAL',
+        guideStart: 'UNDERSTOOD, ENGAGE NOW!',
+        guideBack: 'Back to Menu',
+        upgradeTitle: 'PROTOCOL UPGRADE',
+        upgradeDesc: 'Select a subsystem protocol enhancement:',
+        overTitle: 'CORE DESTROYED',
+        finalLabel: 'FINAL OVERLOAD SCORE',
+        shareBtn: 'Share Score on X',
+        saveMedal: '📸 Mint 4K Combat Medal',
+        replay: '🔄 REPLAY OVERLOAD',
+        medalTip: '💡 Tap green button below to download medal!',
+        guideHtml: `
+          <div class="guide-section">
+            <div class="guide-title">🕹️ 1. Touch Anti-Blocking</div>
+            <div class="guide-content">Drag anywhere to steer. Core automatically maintains 45px offset above touch.</div>
+          </div>
+          <div class="guide-section">
+            <div class="guide-title">✨ 2. Graze & Bullet Time</div>
+            <div class="guide-content">The red dot is the true hitbox! Graze bullets through the blue aura to trigger <strong>Bullet Time</strong> and charge EMP.</div>
+          </div>
+          <div class="guide-section">
+            <div class="guide-title">💥 3. Double Tap EMP Blast</div>
+            <div class="guide-content">When EMP is full, <strong>double tap screen</strong> to spawn a Singularity Blackhole that devours bullets!</div>
+          </div>
+          <div class="guide-section">
+            <div class="guide-title">🛡️ 4. 3-Cell Energy Shield</div>
+            <div class="guide-content">You have <strong>3 shield points</strong>. Taking damage grants 1.2s invulnerability.</div>
+          </div>
+        `,
         upgrades: {
-          drone: { title: "轨道量子僚机", desc: "生成伴生环绕卫星，自动发射激光扫射敌人", icon: "🛰️" },
-          tesla: { title: "特斯拉电弧", desc: "每 2 秒自动释放链式闪电轰击最近的反物质", icon: "⚡" },
-          shield: { title: "离子能量护盾", desc: "生成能量护盾，抵挡 1 次致命碰撞", icon: "🛡️" },
-          magnet: { title: "超维引力磁吸", desc: "极大扩展能量吸附力场，自动拉扯全屏球体", icon: "🧲" },
-          fission: { title: "反物质裂变", desc: "击碎敌人时 35% 几率裂变成小型能量球", icon: "💥" }
+          drone: { title: '🛸 Deploy Laser Drone', desc: 'Summon orbiting drone that fires cyan laser beams to intercept bullets' },
+          tesla: { title: '⚡ Tesla Lightning Storm', desc: 'Discharge chain lightning to vaporize nearby bullets' },
+          shield: { title: '🛡️ Reconstruct Shield', desc: 'Restore 1 shield cell and expand graze collection aura' }
         }
       }
     };
 
-    function showToast(msg) {
-      const t = document.getElementById('toastMsg');
-      t.innerText = msg;
-      t.style.display = 'block';
-      setTimeout(() => t.style.display = 'none', 3000);
+    function applyLang() {
+      const t = I18N[curLang];
+      document.getElementById('startBtn').innerText = t.start;
+      document.getElementById('connectWalletBtn').innerText = realWalletAddress ? `🟢 ${shortAddr(realWalletAddress)}` : t.wallet;
+      document.getElementById('openGuideBtn').innerText = t.guide;
+      document.getElementById('txtSubTitle').innerText = t.subTitle;
+      document.getElementById('txtWalletTitle').innerText = t.walletTitle;
+      document.getElementById('txtWalletSub').innerText = t.walletSub;
+      document.getElementById('txtGuideHeader').innerText = t.guideHeader;
+      document.getElementById('guideContentBox').innerHTML = t.guideHtml;
+      document.getElementById('guideStartBtn').innerText = t.guideStart;
+      document.getElementById('closeGuideBtn').innerText = t.guideBack;
+      document.getElementById('txtUpgradeTitle').innerText = t.upgradeTitle;
+      document.getElementById('txtUpgradeDesc').innerText = t.upgradeDesc;
+      document.getElementById('txtOverTitle').innerText = t.overTitle;
+      document.getElementById('txtFinalScoreLabel').innerText = t.finalLabel;
+      document.getElementById('txtShareBtn').innerText = t.shareBtn;
+      document.getElementById('saveMedalBtn').innerText = t.saveMedal;
+      document.getElementById('restartBtn').innerText = t.replay;
+      document.getElementById('txtMedalTip').innerText = t.medalTip;
+      document.getElementById('langToggleBtn').innerText = curLang === 'zh' ? '🌐 中文 / EN' : '🌐 EN / 中文';
     }
 
-    function updateLanguageUI() {
-      const t = i18n[currentLang];
-      document.getElementById('langBtn').innerText = t.langBtn;
-      document.getElementById('modalTitle').innerText = isGameOver ? t.meltdownTitle : t.title;
-      document.getElementById('modalSubtitle').innerText = isGameOver ? t.meltdownSub : t.subtitle;
-      document.getElementById('labelYield').innerText = t.yield;
-      document.getElementById('labelHull').innerText = t.hull;
-      document.getElementById('startBtn').innerText = isGameOver ? t.restartBtn : t.startBtn;
-      document.getElementById('w3ScoreLabel').innerText = t.finalScore;
-      document.getElementById('w3PilotLabel').innerText = t.pilot;
-      document.getElementById('twitterShareBtn').innerText = t.shareTwitter;
-      document.getElementById('claimBadgeBtn').innerText = t.exportBadge;
-      document.getElementById('skillBtnText').innerText = t.phase;
-      document.getElementById('upgradeModalTitle').innerText = t.upgradeTitle;
-      document.getElementById('upgradeModalSub').innerText = t.upgradeSub;
+    document.getElementById('langToggleBtn').addEventListener('click', () => {
+      curLang = curLang === 'zh' ? 'en' : 'zh';
+      localStorage.setItem('quantum_lang', curLang);
+      applyLang();
+    });
 
-      document.getElementById('levelLabel').innerText = `${t.level} ${level}`;
-      document.getElementById('xpLabel').innerText = `${t.exp} ${xp} / ${xpToNext}`;
+    /* -------------------------------------------------------------
+       音频与合成 BGM (Web Audio API)
+    ------------------------------------------------------------- */
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let bgmStep = 0, bgmInterval = null;
+    const bgmNotes = [110, 110, 130.81, 146.83, 110, 164.81, 146.83, 123.47];
 
-      const listHtml = t.instructions.map(item => `<div>${item}</div>`).join('');
-      document.getElementById('instructionsBox').innerHTML = listHtml;
+    function startBGM() {
+      if (bgmInterval) return;
+      bgmInterval = setInterval(() => {
+        if (!isPlaying || isPaused) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(bgmNotes[bgmStep % bgmNotes.length], audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.035, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+          bgmStep++;
+        } catch(e){}
+      }, 160);
     }
 
-    function toggleLanguage() {
-      currentLang = currentLang === 'en' ? 'zh' : 'en';
-      updateLanguageUI();
-    }
+    function playSfx(type) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
 
-    /* ==========================================================
-       2. Web Audio 音效合成器
-       ========================================================== */
-    let audioCtx = null, soundEnabled = true;
-    function initAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      document.getElementById('soundBtn').innerText = soundEnabled ? "AUDIO: ON" : "AUDIO: OFF";
-    }
-    function playTone(freq, type, dur, slide = null) {
-      if (!soundEnabled || !audioCtx) return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        if (slide) osc.frequency.exponentialRampToValueAtTime(slide, audioCtx.currentTime + dur);
-        g.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-        osc.connect(g);
-        g.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + dur);
-      } catch (e) {}
-    }
-    function vibrate(ms) {
-      if (navigator.vibrate) navigator.vibrate(ms);
-    }
-
-    /* ==========================================================
-       3. 修复小狐狸钱包推特分享 & Base 勋章生成
-       ========================================================== */
-    let userAddress = null;
-    async function connectWallet() {
-      if (!window.ethereum) {
-        alert(currentLang === 'zh' ? '请在 MetaMask / Coinbase 钱包 App 内置浏览器中打开！' : 'Please open inside MetaMask / Coinbase mobile browser!');
-        return;
-      }
-      try {
-        const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        userAddress = accs[0];
-        document.getElementById('walletBtn').innerText = `${userAddress.slice(0, 4)}...${userAddress.slice(-2)}`;
-      } catch (e) {}
-    }
-
-    function shareToTwitter() {
-      const shareUrl = window.location.href.split('?')[0];
-      const rawText = `I survived to Level ${level} with ${score} Q-eV in Quantum Overload on @base! 🔵⚡\n\nCan you beat the bullet hell? Play live:\n${shareUrl}\n\n#Base #BuildOnBase #Web3Gaming`;
-
-      // 1. 自动写入剪贴板（防小狐狸内置浏览器拦截）
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(rawText).catch(() => {});
-      }
-
-      showToast(i18n[currentLang].toastCopied);
-
-      // 2. 尝试拉起 Twitter Intent (双向支持 _blank 和同窗口跳转)
-      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(rawText)}`;
-      try {
-        const opened = window.open(intentUrl, '_blank');
-        if (!opened || opened.closed || typeof opened.closed === 'undefined') {
-          window.location.href = intentUrl; // MetaMask 内置浏览器备用跳转
-        }
-      } catch (e) {
-        window.location.href = intentUrl;
+      if (type === 'graze') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, now);
+        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.05);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.start(now); osc.stop(now + 0.05);
+        if (navigator.vibrate) navigator.vibrate(15);
+      } else if (type === 'emp') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(60, now + 0.4);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+        if (navigator.vibrate) navigator.vibrate([40, 30, 80]);
+      } else if (type === 'hit') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+        if (navigator.vibrate) navigator.vibrate(100);
       }
     }
 
-    async function signAndExportBadge() {
-      if (!userAddress && window.ethereum) await connectWallet();
-      const timeStr = new Date().toISOString();
-      const cvs = document.createElement('canvas');
-      cvs.width = 1200; cvs.height = 630;
-      const c = cvs.getContext('2d');
-      c.fillStyle = '#030712'; c.fillRect(0,0,1200,630);
-      c.strokeStyle = '#00f0ff'; c.lineWidth = 4; c.strokeRect(30,30,1140,570);
-      c.fillStyle = '#00f0ff'; c.font = 'bold 36px monospace';
-      c.fillText('QUANTUM OVERLOAD // BASE PROOF OF SCORE', 60, 90);
-      c.fillStyle = '#00ff66'; c.font = 'bold 52px monospace';
-      c.fillText(`FINAL SCORE: ${score} Q-eV (LVL ${level})`, 60, 240);
-      c.fillStyle = '#94a3b8'; c.font = '24px monospace';
-      c.fillText(`PILOT: ${userAddress || '0xANONYMOUS_PILOT'}`, 60, 340);
-      c.fillText(`NETWORK: BASE MAINNET  |  TIME: ${timeStr}`, 60, 480);
-
-      const a = document.createElement('a');
-      a.download = `Quantum_Score_${score}.png`;
-      a.href = cvs.toDataURL('image/png');
-      a.click();
-    }
-
-    /* ==========================================================
-       4. 硬核弹幕引擎 (Bullet Hell + Swarms + Boss Patterns)
-       ========================================================== */
+    /* -------------------------------------------------------------
+       游戏基础状态
+    ------------------------------------------------------------- */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    let width, height;
 
+    let W, H;
     function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    let isRunning = false, isPaused = false, isGameOver = false;
-    let score = 0, health = 100, level = 1, xp = 0, xpToNext = 60;
-    let empCharge = 0, invulnerableTimer = 0;
-    let teslaTimer = 0, droneLaserTimer = 0, frenzyTimer = 0;
-    let boss = null;
-    let shakeIntensity = 0;
+    let isPlaying = false, isPaused = false;
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem('quantum_best') || '0', 10);
+    document.getElementById('hudBest').innerText = `BEST: ${bestScore}`;
 
-    const upgrades = { drone: 0, tesla: 0, shield: 0, magnet: 0, fission: 0 };
-    let hasShieldActive = false;
+    let hp = 3;
+    let empEnergy = 0;
+    let invulnerableTimer = 0;
+    let timeScale = 1.0;
+    let bulletTimeTimer = 0;
+    let screenShake = 0;
+    let frameCount = 0;
 
     const player = {
-      x: width / 2, y: height / 2,
-      targetX: width / 2, targetY: height / 2,
-      radius: 14, angle: 0, droneAngle: 0
+      x: W / 2,
+      y: H * 0.75,
+      hitR: 5,
+      grazeR: 26,
+      level: 1,
+      exp: 0,
+      nextExp: 600, // 首次升级推迟至 600 经验
+      droneCount: 0,
+      teslaLevel: 0,
+      drones: [] // 存储每个浮游机的射击计时器
     };
 
-    let enemies = [], enemyBullets = [], gems = [], frenzyPrisms = [], particles = [], floatTexts = [];
+    let bullets = [];
+    let particles = [];
+    let floatingTexts = [];
+    let singularities = [];
+    let laserBeams = []; // 浮游机激光束
+    let boss = null;
 
-    // 手指防遮挡控制 (向上偏移 45px)
-    function handlePointer(x, y) {
-      player.targetX = x;
-      player.targetY = y - 45;
-    }
-    window.addEventListener('mousemove', e => handlePointer(e.clientX, e.clientY));
-    window.addEventListener('touchmove', e => {
-      if (e.touches.length > 0) handlePointer(e.touches[0].clientX, e.touches[0].clientY);
-    });
-    window.addEventListener('touchstart', e => {
-      if (e.touches.length > 0) handlePointer(e.touches[0].clientX, e.touches[0].clientY);
-    });
-
-    function triggerSkill() {
-      if (!isRunning || isPaused || invulnerableTimer > 0) return;
-      initAudio();
-      invulnerableTimer = 80;
-      playTone(450, 'sine', 0.3, 200);
-      vibrate(40);
-      createExplosion(player.x, player.y, '#c084fc', 16);
+    function updateHpUI() {
+      for (let i = 1; i <= 3; i++) {
+        const cell = document.getElementById(`hpCell${i}`);
+        if (i <= hp) cell.classList.remove('lost');
+        else cell.classList.add('lost');
+      }
     }
 
-    function triggerEmp() {
-      if (!isRunning || isPaused || empCharge < 100) return;
-      initAudio();
-      empCharge = 0;
-      updateEmpBtn();
-      playTone(180, 'square', 0.5, 900);
-      vibrate([50, 50, 100]);
-      shakeIntensity = 15;
+    /* -------------------------------------------------------------
+       手势与双击 EMP
+    ------------------------------------------------------------- */
+    let lastTapTime = 0;
+    window.addEventListener('touchstart', (e) => {
+      const now = Date.now();
+      if (now - lastTapTime < 320) {
+        triggerEMP();
+      }
+      lastTapTime = now;
+    });
 
-      // EMP 清除全屏敌人与弹幕
-      enemyBullets = [];
-      enemies.forEach(e => {
-        score += 15;
-        createExplosion(e.x, e.y, '#00f0ff', 6);
+    function triggerEMP() {
+      if (!isPlaying || empEnergy < 100) return;
+      empEnergy = 0;
+      document.getElementById('empBar').style.width = '0%';
+      playSfx('emp');
+      screenShake = 15;
+
+      singularities.push({
+        x: player.x,
+        y: player.y - 60,
+        r: 10,
+        maxR: 90,
+        life: 120
       });
-      enemies = [];
-      if (boss) {
-        boss.health -= 250;
-        createExplosion(boss.x, boss.y, '#ff0055', 20);
-      }
-      addFloatText(player.x, player.y - 20, "EMP NOVA!!", "#00f0ff");
-    }
 
-    function updateEmpBtn() {
-      const btn = document.getElementById('empBtn');
-      const txt = document.getElementById('empBtnText');
-      const t = i18n[currentLang];
-      if (empCharge >= 100) {
-        btn.classList.add('emp-ready');
-        txt.innerText = t.empReady;
-      } else {
-        btn.classList.remove('emp-ready');
-        txt.innerText = `${t.empCharging} ${Math.floor(empCharge)}%`;
-      }
-    }
-
-    function showBanner(text) {
-      const banner = document.getElementById('dangerBanner');
-      banner.innerText = text;
-      banner.style.display = 'block';
-      setTimeout(() => banner.style.display = 'none', 2400);
-    }
-
-    function addFloatText(x, y, text, color) {
-      floatTexts.push({ x, y, text, color, life: 1.0 });
-    }
-
-    function createExplosion(x, y, color, count = 10) {
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < 35; i++) {
+        const ang = (i / 35) * Math.PI * 2;
         particles.push({
-          x, y,
-          vx: (Math.random() - 0.5) * 8,
-          vy: (Math.random() - 0.5) * 8,
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(ang) * 10,
+          vy: Math.sin(ang) * 10,
           life: 1.0,
-          color
+          color: '#38bdf8'
         });
       }
+
+      score += bullets.length * 25;
+      floatingTexts.push({ x: player.x, y: player.y - 30, text: '💥 SINGULARITY!', color: '#38bdf8', life: 1.0 });
+      bullets = [];
     }
 
-    function checkLevelUp() {
-      if (xp >= xpToNext) {
-        xp -= xpToNext;
-        level++;
-        xpToNext = Math.floor(xpToNext * 1.45);
-        isPaused = true;
-        playTone(523, 'sine', 0.3, 1046);
-        vibrate([80, 40, 80]);
-        showLevelUpModal();
+    // 滑动操控
+    let touchX = W / 2, touchY = H * 0.75;
+    let isTouching = false;
+
+    window.addEventListener('touchstart', (e) => {
+      if (!isPlaying || isPaused) return;
+      isTouching = true;
+      const t = e.touches[0];
+      touchX = t.clientX;
+      touchY = t.clientY;
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isPlaying || isPaused || !isTouching) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const dx = t.clientX - touchX;
+      const dy = t.clientY - touchY;
+      touchX = t.clientX;
+      touchY = t.clientY;
+
+      player.x = Math.max(20, Math.min(W - 20, player.x + dx));
+      player.y = Math.max(40, Math.min(H - 40, player.y + dy));
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => { isTouching = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isPlaying || isPaused) return;
+      player.x = Math.max(20, Math.min(W - 20, e.clientX));
+      player.y = Math.max(40, Math.min(H - 40, e.clientY - 40));
+    });
+
+    /* -------------------------------------------------------------
+       游戏重置与启动
+    ------------------------------------------------------------- */
+    function initGame() {
+      score = 0;
+      hp = 3;
+      updateHpUI();
+      frameCount = 0;
+      empEnergy = 0;
+      invulnerableTimer = 0;
+      timeScale = 1.0;
+      screenShake = 0;
+      player.level = 1;
+      player.exp = 0;
+      player.nextExp = 600; // 首次 600 经验升级
+      player.droneCount = 0;
+      player.teslaLevel = 0;
+      player.grazeR = 26;
+      player.drones = [];
+      player.x = W / 2;
+      player.y = H * 0.75;
+
+      bullets = [];
+      particles = [];
+      floatingTexts = [];
+      singularities = [];
+      laserBeams = [];
+      boss = null;
+
+      document.getElementById('hudScore').innerText = '0';
+      document.getElementById('empBar').style.width = '0%';
+      document.getElementById('startOverlay').classList.add('hidden');
+      document.getElementById('guideOverlay').classList.add('hidden');
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      document.getElementById('upgradeOverlay').classList.add('hidden');
+      document.getElementById('cardModal').classList.add('hidden');
+      document.getElementById('walletModal').classList.add('hidden');
+
+      isPlaying = true;
+      isPaused = false;
+      audioCtx.resume();
+      startBGM();
+    }
+
+    /* -------------------------------------------------------------
+       弹幕与 BOSS
+    ------------------------------------------------------------- */
+    function spawnBullets() {
+      let speedScale = 0.55;
+      let interval = 38;
+
+      if (frameCount > 1800) { speedScale = 1.15; interval = 16; }
+      else if (frameCount > 800) { speedScale = 0.85; interval = 26; }
+
+      if (frameCount === 1200 && !boss) {
+        boss = {
+          x: W / 2,
+          y: 100,
+          hp: 150,
+          maxHp: 150,
+          rot: 0,
+          fireTimer: 0
+        };
+        floatingTexts.push({ x: W / 2, y: H / 2, text: '⚠️ BOSS!', color: '#ef4444', life: 1.5 });
       }
-      const t = i18n[currentLang];
-      document.getElementById('levelLabel').innerText = `${t.level} ${level}`;
-      document.getElementById('xpLabel').innerText = `${t.exp} ${xp} / ${xpToNext}`;
-      document.getElementById('xpFill').style.width = `${(xp / xpToNext) * 100}%`;
+
+      if (boss) {
+        boss.rot += 0.03;
+        boss.x = W / 2 + Math.sin(frameCount * 0.02) * (W * 0.3);
+        boss.fireTimer++;
+        if (boss.fireTimer % 18 === 0) {
+          for (let i = 0; i < 4; i++) {
+            const ang = boss.rot + (i * Math.PI / 2);
+            bullets.push({
+              x: boss.x,
+              y: boss.y,
+              vx: Math.cos(ang) * 3,
+              vy: Math.sin(ang) * 3,
+              r: 6,
+              grazed: false,
+              color: '#a855f7'
+            });
+          }
+        }
+      }
+
+      if (frameCount % interval === 0) {
+        if (Math.random() < 0.6) {
+          bullets.push({
+            x: Math.random() * (W - 30) + 15,
+            y: -10,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: (Math.random() * 2 + 3.0) * speedScale,
+            r: 5,
+            grazed: false,
+            color: '#ef4444'
+          });
+        } else {
+          const spawnX = Math.random() * W;
+          for (let i = -1; i <= 1; i++) {
+            bullets.push({
+              x: spawnX,
+              y: -10,
+              vx: i * 1.2 * speedScale,
+              vy: 3.5 * speedScale,
+              r: 5,
+              grazed: false,
+              color: '#f43f5e'
+            });
+          }
+        }
+      }
     }
 
-    function showLevelUpModal() {
-      const container = document.getElementById('upgradeCardsContainer');
-      container.innerHTML = '';
-      const pool = ['drone', 'tesla', 'shield', 'magnet', 'fission'];
-      const choices = pool.sort(() => 0.5 - Math.random()).slice(0, 3);
+    /* -------------------------------------------------------------
+       肉鸽升级系统 (平衡升级频率：首次 600，后续 x1.8)
+    ------------------------------------------------------------- */
+    function triggerLevelUp() {
+      isPaused = true;
+      const list = document.getElementById('upgradeList');
+      list.innerHTML = '';
+      const upgDict = I18N[curLang].upgrades;
 
-      choices.forEach(key => {
-        const info = i18n[currentLang].upgrades[key];
-        const card = document.createElement('div');
-        card.className = 'upgrade-card';
-        card.innerHTML = `
-          <div class="upgrade-icon">${info.icon}</div>
-          <div>
-            <div style="font-weight:bold; font-size:13px; color:#00f0ff;">${info.title} <span style="font-size:10px; color:#00ff66;">Lv.${upgrades[key] + 1}</span></div>
-            <div style="font-size:10px; color:#94a3b8; margin-top:2px;">${info.desc}</div>
-          </div>
-        `;
-        card.onclick = () => selectUpgrade(key);
-        container.appendChild(card);
+      ['drone', 'tesla', 'shield'].forEach(id => {
+        const u = upgDict[id];
+        const btn = document.createElement('div');
+        btn.className = 'upgrade-btn';
+        btn.innerHTML = `<div><div style="font-weight:800; font-size:14px; color:#38bdf8;">${u.title}</div><div style="font-size:11px; color:#94a3b8; margin-top:2px;">${u.desc}</div></div>`;
+        btn.onclick = () => selectUpgrade(id);
+        list.appendChild(btn);
       });
 
-      document.getElementById('levelUpOverlay').style.display = 'flex';
+      document.getElementById('upgradeOverlay').classList.remove('hidden');
     }
 
-    function selectUpgrade(key) {
-      upgrades[key]++;
-      if (key === 'shield') hasShieldActive = true;
-      document.getElementById('levelUpOverlay').style.display = 'none';
+    function selectUpgrade(id) {
+      if (id === 'drone') {
+        player.droneCount++;
+        player.drones.push({ fireTimer: 0 }); // 为新浮游机初始化射击计时
+      }
+      if (id === 'tesla') player.teslaLevel++;
+      if (id === 'shield') {
+        hp = Math.min(3, hp + 1);
+        updateHpUI();
+        player.grazeR = Math.min(36, player.grazeR + 3);
+      }
+
+      document.getElementById('upgradeOverlay').classList.add('hidden');
       isPaused = false;
-      loop();
     }
 
-    function startGame() {
-      initAudio();
-      score = 0; health = 100; level = 1; xp = 0; xpToNext = 50; empCharge = 0;
-      invulnerableTimer = 0; teslaTimer = 0; droneLaserTimer = 0; frenzyTimer = 0;
-      boss = null; hasShieldActive = false; shakeIntensity = 0;
-      Object.keys(upgrades).forEach(k => upgrades[k] = 0);
-
-      enemies = []; enemyBullets = []; gems = []; frenzyPrisms = []; particles = []; floatTexts = [];
-      isGameOver = false; isPaused = false; isRunning = true;
-
-      document.getElementById('startOverlay').style.display = 'none';
-      document.getElementById('web3Info').style.display = 'none';
-      document.getElementById('twitterShareBtn').style.display = 'none';
-      document.getElementById('claimBadgeBtn').style.display = 'none';
-      document.getElementById('scoreDisplay').innerText = score;
-      document.getElementById('healthDisplay').innerText = '100%';
-      document.getElementById('healthDisplay').style.color = '#00ff66';
-      updateEmpBtn();
-      checkLevelUp();
-      loop();
-    }
-
-    function gameOver() {
-      isRunning = false; isGameOver = true;
-      playTone(100, 'sawtooth', 0.4, 30);
-      vibrate([150, 100, 200]);
-      updateLanguageUI();
-      document.getElementById('finalScoreVal').innerText = `${score} Q-eV (LVL ${level})`;
-      document.getElementById('pilotAddress').innerText = userAddress ? `${userAddress.slice(0,6)}...${userAddress.slice(-4)}` : 'GUEST PILOT';
-      document.getElementById('web3Info').style.display = 'block';
-      document.getElementById('twitterShareBtn').style.display = 'flex';
-      document.getElementById('claimBadgeBtn').style.display = 'flex';
-      document.getElementById('startOverlay').style.display = 'flex';
-    }
-
-    function takeDamage(dmg) {
-      if (invulnerableTimer > 0) return;
-      if (hasShieldActive) {
-        hasShieldActive = false;
-        invulnerableTimer = 50;
-        playTone(300, 'square', 0.2);
-        addFloatText(player.x, player.y - 20, "SHIELD BROKEN!", "#00f0ff");
-        return;
-      }
-      health -= dmg;
-      shakeIntensity = 12;
-      playTone(120, 'sawtooth', 0.2);
-      vibrate(60);
-      document.getElementById('healthDisplay').innerText = `${Math.max(0, health)}%`;
-      if (health <= 30) document.getElementById('healthDisplay').style.color = '#ff0055';
-      if (health <= 0) gameOver();
-    }
-
-    /* 游戏主循环 */
-    let frame = 0;
+    /* -------------------------------------------------------------
+       主游戏循环
+    ------------------------------------------------------------- */
     function loop() {
-      if (!isRunning || isPaused) return;
-      frame++;
-
-      player.x += (player.targetX - player.x) * 0.24;
-      player.y += (player.targetY - player.y) * 0.24;
-
-      // 屏幕震动
-      let sx = 0, sy = 0;
-      if (shakeIntensity > 0) {
-        sx = (Math.random() - 0.5) * shakeIntensity;
-        sy = (Math.random() - 0.5) * shakeIntensity;
-        shakeIntensity *= 0.88;
-        if (shakeIntensity < 0.5) shakeIntensity = 0;
-      }
+      ctx.clearRect(0, 0, W, H);
 
       ctx.save();
-      ctx.translate(sx, sy);
+      if (screenShake > 0) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        screenShake *= 0.88;
+        if (screenShake < 0.5) screenShake = 0;
+      }
 
-      if (frenzyTimer > 0) {
-        frenzyTimer--;
-        ctx.fillStyle = 'rgba(255, 170, 0, 0.18)';
-        ctx.fillRect(0, 0, width, height);
+      if (bulletTimeTimer > 0) {
+        bulletTimeTimer--;
+        timeScale = 0.35;
       } else {
-        ctx.fillStyle = 'rgba(3, 7, 18, 0.32)';
-        ctx.fillRect(0, 0, width, height);
+        timeScale = 1.0;
       }
 
-      // 1. 僚机
-      if (upgrades.drone > 0) {
-        player.droneAngle += 0.05;
-        const droneCount = upgrades.drone;
-        droneLaserTimer++;
-        for (let d = 0; d < droneCount; d++) {
-          const dAngle = player.droneAngle + (d * (Math.PI * 2 / droneCount));
-          const dx = player.x + Math.cos(dAngle) * 42;
-          const dy = player.y + Math.sin(dAngle) * 42;
+      if (isPlaying && !isPaused) {
+        frameCount++;
+        score++;
+        player.exp += 2;
+        if (invulnerableTimer > 0) invulnerableTimer--;
 
-          ctx.fillStyle = '#00f0ff';
-          ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI * 2); ctx.fill();
+        document.getElementById('hudScore').innerText = score;
 
-          if (droneLaserTimer % 35 === 0 && enemies.length > 0) {
-            const target = enemies[d % enemies.length];
-            playTone(1200, 'sine', 0.05);
-            ctx.strokeStyle = '#00ff66';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(target.x, target.y); ctx.stroke();
-            createExplosion(target.x, target.y, '#00ff66', 4);
-            score += 5;
-            enemies.splice(d % enemies.length, 1);
-          }
-        }
-      }
-
-      // 2. 特斯拉电弧
-      if (upgrades.tesla > 0) {
-        teslaTimer++;
-        if (teslaTimer > Math.max(35, 90 - upgrades.tesla * 15) && enemies.length > 0) {
-          teslaTimer = 0;
-          const target = enemies[0];
-          playTone(880, 'sine', 0.08);
-          ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(player.x, player.y);
-          ctx.lineTo((player.x + target.x)/2 + (Math.random()-0.5)*30, (player.y + target.y)/2);
-          ctx.lineTo(target.x, target.y); ctx.stroke();
-          createExplosion(target.x, target.y, '#00f0ff', 6);
-          score += 10;
-          enemies.shift();
-        }
-      }
-
-      // 3. 生成道具与狂暴棱镜
-      if (frame % 28 === 0) gems.push({ x: Math.random() * (width - 40) + 20, y: Math.random() * (height - 120) + 60, r: 6, pulse: 0 });
-      if (frame % 650 === 0) frenzyPrisms.push({ x: Math.random() * (width - 40) + 20, y: Math.random() * (height - 120) + 60, r: 12, pulse: 0 });
-
-      // 4. 生成普通敌人与远程射手
-      const spawnRate = Math.max(10, 32 - level * 3);
-      if (frame % spawnRate === 0) {
-        const angle = Math.random() * Math.PI * 2;
-        const d = Math.max(width, height) / 2 + 30;
-        const ex = width / 2 + Math.cos(angle) * d;
-        const ey = height / 2 + Math.sin(angle) * d;
-        const isShooter = Math.random() < 0.25;
-
-        enemies.push({
-          x: ex, y: ey,
-          vx: ((player.x - ex) / d) * (2.8 + level * 0.2),
-          vy: ((player.y - ey) / d) * (2.8 + level * 0.2),
-          r: isShooter ? 9 : 7,
-          isShooter: isShooter,
-          shootTimer: 0,
-          grazed: false
-        });
-      }
-
-      // 5. 虫群入侵事件 (Swarm Invasions 每 450 帧)
-      if (frame % 450 === 0 && score > 80) {
-        showBanner(i18n[currentLang].swarmAlert);
-        vibrate([80, 50, 80]);
-        for (let s = 0; s < 12; s++) {
-          const sAngle = (s / 12) * Math.PI * 2;
-          const sDist = Math.max(width, height) / 2 + 40;
-          enemies.push({
-            x: width / 2 + Math.cos(sAngle) * sDist,
-            y: height / 2 + Math.sin(sAngle) * sDist,
-            vx: Math.cos(sAngle + Math.PI) * (4.2 + level * 0.2),
-            vy: Math.sin(sAngle + Math.PI) * (4.2 + level * 0.2),
-            r: 5, isShooter: false, grazed: false
-          });
-        }
-      }
-
-      // 6. 泰坦首领生成与弹幕
-      if (score >= 250 && !boss && frame % 600 === 0) {
-        boss = { x: width / 2, y: 110, r: 32, health: 500, maxHealth: 500, angle: 0, bulletAngle: 0 };
-        showBanner(i18n[currentLang].bossAlert);
-        vibrate([100, 50, 100]);
-      }
-
-      // 7. 处理能量球
-      const magnetRange = frenzyTimer > 0 ? 600 : (60 + upgrades.magnet * 50);
-      for (let i = gems.length - 1; i >= 0; i--) {
-        const g = gems[i];
-        g.pulse += 0.08;
-        const dx = player.x - g.x, dy = player.y - g.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < magnetRange) {
-          g.x += (dx / dist) * 8;
-          g.y += (dy / dist) * 8;
+        if (player.exp >= player.nextExp) {
+          player.level++;
+          player.exp = 0;
+          player.nextExp = Math.floor(player.nextExp * 1.8); // 升级间隔指数递增
+          triggerLevelUp();
         }
 
-        ctx.fillStyle = '#00ff66';
-        ctx.beginPath(); ctx.arc(g.x, g.y, g.r + Math.sin(g.pulse)*2, 0, Math.PI*2); ctx.fill();
+        spawnBullets();
 
-        if (dist < player.radius + g.r) {
-          playTone(650, 'sine', 0.08);
-          vibrate(15);
-          score += 10; xp += 15;
-          empCharge = Math.min(100, empCharge + 8);
-          updateEmpBtn();
-          checkLevelUp();
-          document.getElementById('scoreDisplay').innerText = score;
-          gems.splice(i, 1);
-        }
-      }
-
-      // 8. 处理狂暴棱镜
-      for (let i = frenzyPrisms.length - 1; i >= 0; i--) {
-        const fp = frenzyPrisms[i];
-        fp.pulse += 0.08;
-        ctx.fillStyle = '#ffaa00';
-        ctx.beginPath(); ctx.arc(fp.x, fp.y, fp.r + Math.sin(fp.pulse)*3, 0, Math.PI*2); ctx.fill();
-
-        if (Math.hypot(player.x - fp.x, player.y - fp.y) < player.radius + fp.r) {
-          frenzyTimer = 180;
-          playTone(900, 'square', 0.4, 1800);
-          vibrate([60, 60, 120]);
-          addFloatText(player.x, player.y - 30, "WARP FRENZY!!", "#ffaa00");
-          frenzyPrisms.splice(i, 1);
-        }
-      }
-
-      // 9. 处理敌人与远程射击
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
-        e.x += e.vx; e.y += e.vy;
-
-        // 远程敌人发射弹幕
-        if (e.isShooter) {
-          e.shootTimer++;
-          if (e.shootTimer > 75) {
-            e.shootTimer = 0;
-            const bAngle = Math.atan2(player.y - e.y, player.x - e.x);
-            enemyBullets.push({
-              x: e.x, y: e.y,
-              vx: Math.cos(bAngle) * 4.5,
-              vy: Math.sin(bAngle) * 4.5,
-              r: 4
+        // 特斯拉放电
+        if (player.teslaLevel > 0 && frameCount % Math.max(25, 70 - player.teslaLevel * 14) === 0) {
+          if (bullets.length > 0) {
+            let closest = bullets[0];
+            let minDist = 9999;
+            bullets.forEach(b => {
+              const d = Math.hypot(b.x - player.x, b.y - player.y);
+              if (d < minDist) { minDist = d; closest = b; }
             });
-            playTone(320, 'square', 0.06);
+
+            if (minDist < 240) {
+              ctx.strokeStyle = '#38bdf8';
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.moveTo(player.x, player.y);
+              ctx.lineTo(closest.x, closest.y);
+              ctx.stroke();
+              bullets = bullets.filter(b => b !== closest);
+              score += 15;
+            }
           }
         }
+      }
 
-        ctx.fillStyle = e.isShooter ? '#ffaa00' : '#ff0055';
-        ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      // 背景网格
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+      ctx.lineWidth = 1;
+      const gridOffset = (frameCount * 1.5) % 40;
+      for (let x = 0; x < W; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = gridOffset; y < H; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y); ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // 黑洞奇点
+      for (let i = singularities.length - 1; i >= 0; i--) {
+        const s = singularities[i];
+        s.life--;
+        if (s.r < s.maxR) s.r += 2;
+
+        ctx.strokeStyle = `rgba(56, 189, 248, ${s.life / 120})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        bullets = bullets.filter(b => {
+          const d = Math.hypot(b.x - s.x, b.y - s.y);
+          if (d < s.r + 20) {
+            score += 10;
+            return false;
+          }
+          return true;
+        });
+
+        if (s.life <= 0) singularities.splice(i, 1);
+      }
+
+      // Boss
+      if (boss) {
+        ctx.save();
+        ctx.translate(boss.x, boss.y);
+        ctx.rotate(boss.rot);
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(-25, -25, 50, 50);
+        ctx.rotate(Math.PI / 4);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.strokeRect(-20, -20, 40, 40);
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+        ctx.fillRect(boss.x - 35, boss.y - 45, 70, 6);
+        ctx.fillStyle = '#a855f7';
+        ctx.fillRect(boss.x - 35, boss.y - 45, (boss.hp / boss.maxHp) * 70, 6);
+      }
+
+      // 浮游机 + 真实激光射击系统
+      if (player.droneCount > 0) {
+        for (let i = 0; i < player.droneCount; i++) {
+          const ang = (frameCount * 0.05) + (i * (Math.PI * 2 / player.droneCount));
+          const dx = player.x + Math.cos(ang) * 45;
+          const dy = player.y + Math.sin(ang) * 45;
+
+          // 绘制浮游机本体
+          ctx.fillStyle = '#38bdf8';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // 浮游机射击逻辑 (每 0.5 秒 = 30 帧发射一次激光)
+          if (isPlaying && !isPaused) {
+            player.drones[i].fireTimer++;
+            if (player.drones[i].fireTimer >= 30 && bullets.length > 0) {
+              player.drones[i].fireTimer = 0;
+
+              // 查找最近的弹幕
+              let target = null;
+              let minDist = 9999;
+              bullets.forEach(b => {
+                const d = Math.hypot(b.x - dx, b.y - dy);
+                if (d < minDist) { minDist = d; target = b; }
+              });
+
+              if (target && minDist < 300) {
+                // 发射激光束 (视觉特效)
+                laserBeams.push({
+                  x1: dx, y1: dy,
+                  x2: target.x, y2: target.y,
+                  life: 6 // 激光持续 6 帧
+                });
+
+                // 命中弹幕并消除
+                bullets = bullets.filter(b => b !== target);
+                score += 12;
+
+                // 爆炸粒子特效
+                for (let p = 0; p < 5; p++) {
+                  particles.push({
+                    x: target.x,
+                    y: target.y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 0.6,
+                    color: '#38bdf8'
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 绘制浮游机激光束
+      for (let i = laserBeams.length - 1; i >= 0; i--) {
+        const beam = laserBeams[i];
+        beam.life--;
+
+        ctx.strokeStyle = `rgba(56, 189, 248, ${beam.life / 6})`;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.moveTo(beam.x1, beam.y1);
+        ctx.lineTo(beam.x2, beam.y2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        if (beam.life <= 0) laserBeams.splice(i, 1);
+      }
+
+      // 玩家核心
+      if (isPlaying) {
+        ctx.save();
+        ctx.translate(player.x, player.y);
+
+        // 擦弹圈
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, player.grazeR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 护盾光圈
+        const shieldColor = hp >= 2 ? '16, 185, 129' : '239, 68, 68';
+        ctx.strokeStyle = `rgba(${shieldColor}, ${0.4 + Math.sin(frameCount * 0.1) * 0.2})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, player.grazeR + 8, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 核心
+        ctx.fillStyle = (invulnerableTimer % 4 < 2) ? '#38bdf8' : '#ffffff';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(0, 0, player.hitR + 3, 0, Math.PI * 2);
         ctx.fill();
 
-        const dist = Math.hypot(player.x - e.x, player.y - e.y);
+        // 判定红点
+        ctx.fillStyle = '#ef4444';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
 
-        // 擦弹
-        if (!e.grazed && dist < player.radius + e.r + 14 && dist >= player.radius + e.r) {
-          e.grazed = true;
-          score += 25;
-          empCharge = Math.min(100, empCharge + 15);
-          updateEmpBtn();
-          playTone(1400, 'triangle', 0.06);
-          vibrate(20);
-          addFloatText(e.x, e.y, "GRAZE +25", "#00f0ff");
-          createExplosion(e.x, e.y, '#00f0ff', 4);
-        }
-
-        // 狂暴碾压
-        if (frenzyTimer > 0 && dist < player.radius + e.r) {
-          score += 20;
-          createExplosion(e.x, e.y, '#ffaa00', 8);
-          enemies.splice(i, 1);
-          continue;
-        }
-
-        // 碰撞受创
-        if (dist < player.radius + e.r) {
-          takeDamage(35);
-          enemies.splice(i, 1);
-        }
+        ctx.restore();
       }
 
-      // 10. 处理敌方弹幕 (Bullet Hell)
-      for (let i = enemyBullets.length - 1; i >= 0; i--) {
-        const b = enemyBullets[i];
-        b.x += b.vx; b.y += b.vy;
-
-        ctx.fillStyle = '#ff0055';
-        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
-
-        if (Math.hypot(player.x - b.x, player.y - b.y) < player.radius + b.r) {
-          takeDamage(25);
-          enemyBullets.splice(i, 1);
-          continue;
+      // 更新 & 绘制子弹
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        if (isPlaying && !isPaused) {
+          b.x += b.vx * timeScale;
+          b.y += b.vy * timeScale;
         }
 
-        // 出界销毁
-        if (b.x < 0 || b.x > width || b.y < 0 || b.y > height) {
-          enemyBullets.splice(i, 1);
-        }
-      }
+        ctx.fillStyle = b.color;
+        ctx.shadowColor = b.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
 
-      // 11. 处理 Boss 与 360° 旋转弹幕
-      if (boss) {
-        boss.angle += 0.03;
-        boss.bulletAngle += 0.12;
-        boss.x += Math.sin(boss.angle) * 3;
+        if (isPlaying && !isPaused) {
+          const dist = Math.hypot(b.x - player.x, b.y - player.y);
 
-        // Boss 周期发射螺旋弹幕
-        if (frame % 16 === 0) {
-          for (let k = 0; k < 4; k++) {
-            const rot = boss.bulletAngle + (k * (Math.PI / 2));
-            enemyBullets.push({
-              x: boss.x, y: boss.y,
-              vx: Math.cos(rot) * 3.5,
-              vy: Math.sin(rot) * 3.5,
-              r: 4.5
-            });
+          // 擦弹判定
+          if (dist < player.grazeR + b.r && !b.grazed) {
+            b.grazed = true;
+            score += 35;
+            empEnergy = Math.min(100, empEnergy + 4);
+            document.getElementById('empBar').style.width = empEnergy + '%';
+            bulletTimeTimer = 10;
+            playSfx('graze');
+            floatingTexts.push({ x: player.x, y: player.y - 15, text: '+GRAZE', color: '#fbbf24', life: 0.8 });
+          }
+
+          // 撞击判定
+          if (dist < player.hitR + b.r && invulnerableTimer === 0) {
+            hp--;
+            updateHpUI();
+            playSfx('hit');
+            screenShake = 16;
+            invulnerableTimer = 70;
+
+            if (hp <= 0) {
+              gameOver();
+              break;
+            } else {
+              bullets.splice(i, 1);
+              continue;
+            }
+          }
+
+          if (b.y > H + 20 || b.x < -20 || b.x > W + 20) {
+            bullets.splice(i, 1);
           }
         }
-
-        ctx.fillStyle = '#7928ca'; ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.r, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#ff0055'; ctx.lineWidth = 3; ctx.stroke();
-
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(boss.x - 36, boss.y - 45, 72, 6);
-        ctx.fillStyle = '#ff0055';
-        ctx.fillRect(boss.x - 36, boss.y - 45, (boss.health / boss.maxHealth) * 72, 6);
-
-        if (boss.health <= 0) {
-          createExplosion(boss.x, boss.y, '#00ff66', 35);
-          score += 300; xp += 150;
-          boss = null;
-          checkLevelUp();
-        }
       }
 
-      // 12. 绘制玩家
-      if (invulnerableTimer > 0) {
-        invulnerableTimer--;
-        ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(player.x, player.y, player.radius + 8, 0, Math.PI * 2); ctx.stroke();
-      }
-      if (hasShieldActive) {
-        ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(player.x, player.y, player.radius + 12, 0, Math.PI * 2); ctx.stroke();
+      // 飘字
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 0.8;
+        ft.life -= 0.025;
+        if (ft.life <= 0) { floatingTexts.splice(i, 1); continue; }
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = ft.life;
+        ctx.font = '900 12px monospace';
+        ctx.fillText(ft.text, ft.x - 20, ft.y);
+        ctx.globalAlpha = 1.0;
       }
 
-      player.angle += 0.05;
-      ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.rotate(player.angle);
-      ctx.strokeStyle = frenzyTimer > 0 ? '#ffaa00' : '#00f0ff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-player.radius, -player.radius, player.radius * 2, player.radius * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-
-      // 13. 粒子与浮动文字
+      // 爆炸粒子
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx; p.y += p.vy; p.life -= 0.04;
+        p.x += p.vx * timeScale;
+        p.y += p.vy * timeScale;
+        p.life -= 0.03;
         if (p.life <= 0) { particles.splice(i, 1); continue; }
-        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-        ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-      for (let i = floatTexts.length - 1; i >= 0; i--) {
-        const ft = floatTexts[i];
-        ft.y -= 1; ft.life -= 0.03;
-        if (ft.life <= 0) { floatTexts.splice(i, 1); continue; }
-        ctx.fillStyle = ft.color; ctx.font = 'bold 12px monospace'; ctx.globalAlpha = ft.life;
-        ctx.fillText(ft.text, ft.x - 20, ft.y);
-        ctx.globalAlpha = 1;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 3, 3);
+        ctx.globalAlpha = 1.0;
       }
 
       ctx.restore();
       requestAnimationFrame(loop);
     }
+    requestAnimationFrame(loop);
 
-    updateLanguageUI();
+    /* -------------------------------------------------------------
+       结算 & 4K 勋章卡片（修复保存问题）
+    ------------------------------------------------------------- */
+    function gameOver() {
+      isPlaying = false;
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('quantum_best', bestScore);
+        document.getElementById('hudBest').innerText = `BEST: ${bestScore}`;
+      }
+      document.getElementById('finalScoreText').innerText = score;
+
+      let rank = curLang === 'zh' ? '初级操作员' : 'ROOKIE OPERATOR';
+      if (score > 1500) rank = 'QUANTUM GOD 👑';
+      else if (score > 800) rank = 'CYBER ACE 💎';
+      else if (score > 300) rank = 'OVERLOAD SURVIVOR ⚡';
+
+      document.getElementById('finalRankBadge').innerText = rank;
+      document.getElementById('gameOverOverlay').classList.remove('hidden');
+    }
+
+    function generateMedalCard() {
+      const c = document.createElement('canvas');
+      c.width = 1080;
+      c.height = 1440;
+      const cardCtx = c.getContext('2d');
+
+      const bgGrad = cardCtx.createLinearGradient(0, 0, 1080, 1440);
+      bgGrad.addColorStop(0, '#0a101f');
+      bgGrad.addColorStop(1, '#030712');
+      cardCtx.fillStyle = bgGrad;
+      cardCtx.fillRect(0, 0, 1080, 1440);
+
+      cardCtx.strokeStyle = '#38bdf8';
+      cardCtx.lineWidth = 12;
+      cardCtx.strokeRect(40, 40, 1000, 1360);
+
+      cardCtx.fillStyle = '#38bdf8';
+      cardCtx.font = '900 56px monospace';
+      cardCtx.textAlign = 'center';
+      cardCtx.fillText('QUANTUM OVERLOAD', 540, 160);
+
+      cardCtx.fillStyle = '#64748b';
+      cardCtx.font = '700 24px sans-serif';
+      cardCtx.fillText('VERIFIED APEX COMBAT MEDAL 🔵', 540, 210);
+
+      cardCtx.beginPath();
+      cardCtx.arc(540, 480, 150, 0, Math.PI * 2);
+      cardCtx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+      cardCtx.fill();
+      cardCtx.strokeStyle = '#38bdf8';
+      cardCtx.lineWidth = 6;
+      cardCtx.stroke();
+
+      cardCtx.fillStyle = '#38bdf8';
+      cardCtx.font = '900 80px sans-serif';
+      cardCtx.fillText('⚡', 540, 510);
+
+      cardCtx.fillStyle = '#ffffff';
+      cardCtx.font = '900 42px monospace';
+      cardCtx.fillText(document.getElementById('finalRankBadge').innerText, 540, 720);
+
+      cardCtx.fillStyle = '#94a3b8';
+      cardCtx.font = '700 26px sans-serif';
+      cardCtx.fillText('SURVIVAL SCORE', 540, 820);
+
+      cardCtx.fillStyle = '#38bdf8';
+      cardCtx.font = '900 110px monospace';
+      cardCtx.fillText(score.toString(), 540, 940);
+
+      // 真实钱包地址刻印
+      cardCtx.fillStyle = '#fbbf24';
+      cardCtx.font = '700 28px monospace';
+      const displayWallet = realWalletAddress ? shortAddr(realWalletAddress) : 'GUEST';
+      cardCtx.fillText(`PILOT: ${displayWallet}`, 540, 1080);
+
+      cardCtx.fillStyle = '#475569';
+      cardCtx.font = '600 22px monospace';
+      const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      cardCtx.fillText(`VERIFIED AT: ${timestamp} UTC`, 540, 1200);
+
+      cardCtx.fillStyle = '#0284c7';
+      cardCtx.font = '800 28px sans-serif';
+      cardCtx.fillText('BUILD ON BASE · APEX CHALLENGE', 540, 1270);
+
+      return c.toDataURL('image/png');
+    }
+
+    /* -------------------------------------------------------------
+       真实 Web3 钱包体系
+    ------------------------------------------------------------- */
+    let realWalletAddress = null;
+
+    function shortAddr(addr) {
+      if (!addr || addr.length < 10) return addr;
+      return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    }
+
+    async function tryConnectInjected() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts.length > 0) {
+            realWalletAddress = accounts[0];
+            document.getElementById('hudWallet').innerText = `PILOT: ${shortAddr(realWalletAddress)}`;
+            document.getElementById('connectWalletBtn').innerText = `🟢 ${shortAddr(realWalletAddress)}`;
+            document.getElementById('walletModal').classList.add('hidden');
+
+            try {
+              await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x2105' }],
+              });
+            } catch (switchErr) {
+              if (switchErr.code === 4902) {
+                await window.ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x2105',
+                    chainName: 'Base Mainnet',
+                    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://mainnet.base.org'],
+                    blockExplorerUrls: ['https://basescan.org']
+                  }]
+                });
+              }
+            }
+          }
+        } catch (err) {
+          alert('连接被取消或失败: ' + err.message);
+        }
+      } else {
+        alert(curLang === 'zh' ? '未检测到 Web3 插件，请用下方按钮在钱包内打开！' : 'No Web3 provider. Please open inside wallet app.');
+      }
+    }
+
+    function openWalletModal() {
+      const currentUrl = window.location.href;
+      document.getElementById('btnOpenOKX').href = `okx://wallet/dapp/url?dappUrl=${encodeURIComponent(currentUrl)}`;
+      document.getElementById('btnOpenMetaMask').href = `https://metamask.app.link/dapp/${window.location.host + window.location.pathname}`;
+
+      document.getElementById('startOverlay').classList.add('hidden');
+      document.getElementById('walletModal').classList.remove('hidden');
+    }
+
+    /* -------------------------------------------------------------
+       一键推特分享
+    ------------------------------------------------------------- */
+    function shareToTwitter() {
+      const text = `🕹️ Just scored ${score} pts in Quantum Overload on @base!%0A%0ACan you beat my bullet-hell survival record?%0A👉 https://qiangwang1177-maker.github.io/nft-game/%0A%0A%23BuildOnBase %23BaseEcosystem`;
+      window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+    }
+
+    /* -------------------------------------------------------------
+       事件监听绑定
+    ------------------------------------------------------------- */
+    document.getElementById('startBtn').addEventListener('click', initGame);
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+    document.getElementById('connectWalletBtn').addEventListener('click', openWalletModal);
+    document.getElementById('btnConnectInjected').addEventListener('click', tryConnectInjected);
+    document.getElementById('closeWalletModalBtn').addEventListener('click', () => {
+      document.getElementById('walletModal').classList.add('hidden');
+      document.getElementById('startOverlay').classList.remove('hidden');
+    });
+
+    document.getElementById('shareTwitterBtn').addEventListener('click', shareToTwitter);
+
+    document.getElementById('openGuideBtn').addEventListener('click', () => {
+      document.getElementById('startOverlay').classList.add('hidden');
+      document.getElementById('guideOverlay').classList.remove('hidden');
+    });
+    document.getElementById('closeGuideBtn').addEventListener('click', () => {
+      document.getElementById('guideOverlay').classList.add('hidden');
+      document.getElementById('startOverlay').classList.remove('hidden');
+    });
+    document.getElementById('guideStartBtn').addEventListener('click', initGame);
+
+    // 修复勋章保存问题：生成后提供真实下载按钮
+    document.getElementById('saveMedalBtn').addEventListener('click', () => {
+      const dataUrl = generateMedalCard();
+      document.getElementById('generatedCard').src = dataUrl;
+      document.getElementById('downloadMedalLink').href = dataUrl; // 关键修复：绑定下载链接
+      document.getElementById('cardModal').classList.remove('hidden');
+    });
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('cardModal').classList.add('hidden');
+    });
+
+    // 初始化语言
+    applyLang();
   </script>
 </body>
 </html>
