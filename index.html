@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>QUANTUM OVERLOAD: 雷霆战机Web3版</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <title>QUANTUM OVERLOAD: 雷霆战机无限版</title>
   <style>
     * {
       box-sizing: border-box;
@@ -141,7 +140,7 @@
       transition: width 0.1s linear;
     }
 
-    /* 底部战斗技能栏 */
+    /* 底部技能栏 */
     .hud-bottom {
       position: absolute;
       bottom: 12px;
@@ -183,7 +182,7 @@
       color: #cbd5e1;
     }
 
-    /* 遮罩面板 */
+    /* 遮罩面板通用 */
     .overlay {
       position: absolute;
       inset: 0;
@@ -205,7 +204,7 @@
       background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: center;
     }
 
@@ -238,14 +237,14 @@
       color: #34d399;
     }
 
-    /* 真实 Web3 跳转选择弹窗 */
+    /* 真实 Web3 弹窗 */
     .wallet-modal-card {
       background: #0f172a;
       border: 1px solid #38bdf8;
       border-radius: 12px;
       padding: 18px;
       width: 100%;
-      max-width: 300px;
+      max-width: 310px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -257,7 +256,7 @@
       justify-content: space-between;
       background: #1e293b;
       border: 1px solid #334155;
-      padding: 10px 14px;
+      padding: 12px 14px;
       border-radius: 8px;
       color: white;
       font-size: 13px;
@@ -369,20 +368,19 @@
           <div class="hp-dot active" id="hp2"></div>
           <div class="hp-dot active" id="hp3"></div>
         </div>
-        <!-- 暴走蓄能条 -->
         <div class="rage-bar-container" title="拾取 3 个 P 符进入暴走">
           <div class="rage-bar-fill" id="rageBar"></div>
         </div>
       </div>
       
       <div class="hud-block" style="text-align: right;">
-        <div class="hud-title">STAGE WAVE</div>
-        <div class="hud-value" style="color: #38bdf8;" id="waveDisplay">WAVE 1</div>
+        <div class="hud-title">STAGE & SECTOR</div>
+        <div class="hud-value" style="color: #38bdf8;" id="waveDisplay">SECTOR 1</div>
         <div class="hud-title" style="margin-top:2px;">SYS LV.<span id="lvlDisplay" style="color:#fbbf24; font-weight:800;">1</span> · 💎<span id="inGameTokens">0</span></div>
       </div>
     </div>
 
-    <!-- 顶部 Boss 专属血条 -->
+    <!-- Boss 血条 -->
     <div id="bossHud">
       <div class="boss-info">
         <span id="bossName">BOSS: QUANTUM CORE</span>
@@ -406,7 +404,7 @@
     <!-- 主界面 -->
     <div class="overlay" id="startOverlay">
       <div class="title">QUANTUM OVERLOAD</div>
-      <p style="color:#38bdf8; font-size:11px; font-weight:800; margin-bottom:10px; letter-spacing:1px;">⚡ 雷霆战机 · 赛博进化版</p>
+      <p style="color:#38bdf8; font-size:11px; font-weight:800; margin-bottom:8px; letter-spacing:1px;">⚡ 雷霆战机 · 无限星区版</p>
 
       <!-- Web3 连接面板 -->
       <div class="menu-wallet-card">
@@ -425,35 +423,34 @@
         <button class="sec-btn" onclick="openQuests()">📜 悬赏任务</button>
       </div>
 
-      <!-- 操作指南 -->
       <div class="key-box">
-        <b>🎮 雷霆战机经典玩法指南</b><br/>
-        操控: <span class="kb">WASD / 鼠标拖拽</span> 自由移动<br/>
-        物资: 击毁敌机爆出 <b style="color:#38bdf8;">[蓝晶]</b> 升级 & <b style="color:#fbbf24;">[P符]</b> 暴走<br/>
-        战术: <span class="kb">Q</span> 护盾 | <span class="kb">E</span> 聚能歼灭 | <span class="kb">Space</span> 全屏必杀
+        <b>🎮 玩法与按键指南</b><br/>
+        移动: <span class="kb">WASD / 鼠标按住拖拽</span><br/>
+        物资: 击毁敌机吸取 <b style="color:#38bdf8;">[蓝晶]</b> 升级 & <b style="color:#fbbf24;">[P符]</b> 暴走<br/>
+        技能: <span class="kb">Q</span> 护盾 | <span class="kb">E</span> 聚能炮 | <span class="kb">Space</span> 必杀
       </div>
     </div>
 
-    <!-- Web3 真实跳转选择弹窗 -->
+    <!-- Web3 真实弹窗 -->
     <div class="overlay hidden" id="walletModal">
       <div class="wallet-modal-card">
-        <h4 style="color:#38bdf8; text-align:center; margin-bottom:6px;">连接加密钱包</h4>
-        <p style="color:#94a3b8; font-size:11px; text-align:center; margin-bottom:10px;">连接即可免费领取【👑 黄金赛博】战机</p>
+        <h4 style="color:#38bdf8; text-align:center; margin-bottom:4px;">连接加密钱包</h4>
+        <p style="color:#94a3b8; font-size:11px; text-align:center; margin-bottom:10px;">连接免费解锁【👑 黄金赛博】战机</p>
         
-        <button class="wallet-option-btn" onclick="connectSpecificWallet('metamask')">
-          <span>🦊 MetaMask 钱包</span>
-          <span style="font-size:11px; color:#38bdf8;">连接 / 跳转 ↗</span>
-        </button>
         <button class="wallet-option-btn" onclick="connectSpecificWallet('okx')">
           <span>🟢 OKX Web3 钱包</span>
-          <span style="font-size:11px; color:#38bdf8;">连接 / 跳转 ↗</span>
+          <span style="font-size:11px; color:#38bdf8;">唤醒 / 跳转 ↗</span>
         </button>
-        <button class="wallet-option-btn" onclick="connectSpecificWallet('browser')">
-          <span>🔷 浏览器默认注入钱包</span>
-          <span style="font-size:11px; color:#38bdf8;">直接唤醒</span>
+        <button class="wallet-option-btn" onclick="connectSpecificWallet('metamask')">
+          <span>🦊 MetaMask 钱包</span>
+          <span style="font-size:11px; color:#38bdf8;">唤醒 / 跳转 ↗</span>
+        </button>
+        <button class="wallet-option-btn" onclick="connectSpecificWallet('injected')">
+          <span>🔷 浏览器默认插件</span>
+          <span style="font-size:11px; color:#38bdf8;">直接调用</span>
         </button>
         
-        <button class="sec-btn" style="margin-top:8px;" onclick="closeWalletModal()">取消</button>
+        <button class="sec-btn" style="margin-top:6px;" onclick="closeWalletModal()">取消</button>
       </div>
     </div>
 
@@ -463,15 +460,15 @@
       <div class="card-group">
         <div class="skin-card" onclick="selectSkin('cyan')">
           <h4>🔷 量子苍穹 (Cyan Standard)</h4>
-          <p>经典战机涂装。青蓝弹道 (默认解锁)</p>
+          <p>经典战机涂装。青蓝能量弹道 (默认解锁)</p>
         </div>
         <div class="skin-card" onclick="selectSkin('gold')">
           <h4>👑 黄金赛博 (Cyber Gold)</h4>
-          <p>Web3 链上专属涂装。暴走金光流向。<span style="color:#fbbf24;">(主界面连接钱包即刻解锁)</span></p>
+          <p>Web3 专属战机。暴走流金弹道。<span style="color:#fbbf24;">(主界面连接钱包免费解锁)</span></p>
         </div>
         <div class="skin-card" onclick="selectSkin('void')">
           <h4>🔮 虚空黑晶 (Void Obsidian)</h4>
-          <p>深渊暗物质立场。暗紫毁灭光束。<span style="color:#c084fc;">(消耗 300 $QDUST 兑换)</span></p>
+          <p>深渊暗物质战机。释放紫黑毁灭光束。<span style="color:#c084fc;">(消耗 300 $QDUST 兑换)</span></p>
         </div>
       </div>
       <button class="sec-btn" style="margin-top:14px;" onclick="closeHangar()">BACK</button>
@@ -482,16 +479,16 @@
       <div class="title">DAILY BOUNTY</div>
       <div class="card-group">
         <div class="upgrade-card" style="cursor:default;">
-          <h4>🎯 任务一：火力全开</h4>
+          <h4>🎯 任务一：火力暴走</h4>
           <p>单局内拾取 3 个 P 符进入暴走状态。奖励：<b style="color:#fbbf24;">+100 $QDUST</b></p>
         </div>
         <div class="upgrade-card" style="cursor:default;">
-          <h4>⚡ 任务二：水晶猎手</h4>
-          <p>单局累计拾取 20 颗能量水晶。奖励：<b style="color:#fbbf24;">+150 $QDUST</b></p>
+          <h4>⚡ 任务二：水晶采集</h4>
+          <p>单局累计拾取 30 颗能量水晶。奖励：<b style="color:#fbbf24;">+150 $QDUST</b></p>
         </div>
         <div class="upgrade-card" style="cursor:default;">
-          <h4>👑 任务三：首领歼灭</h4>
-          <p>击破关卡终极 Boss。奖励：<b style="color:#fbbf24;">+200 $QDUST</b></p>
+          <h4>👑 任务三：星区征服者</h4>
+          <p>击破任意关底 Boss。奖励：<b style="color:#fbbf24;">+200 $QDUST</b></p>
         </div>
       </div>
       <button class="sec-btn" style="margin-top:14px;" onclick="closeQuests()">BACK</button>
@@ -538,8 +535,9 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    /* --- 真实 Web3 钱包连接与深度跳转 --- */
+    /* --- 真实 Web3 钱包（原生 EIP-1193，解决 chain is not set up） --- */
     let realAccount = null;
+    let activeProvider = null;
     let qdustTokens = parseInt(localStorage.getItem('qo_qdust_tokens') || '0');
     let currentSkin = localStorage.getItem('qo_current_skin') || 'cyan';
     let ownedSkins = JSON.parse(localStorage.getItem('qo_owned_skins') || '["cyan"]');
@@ -553,17 +551,29 @@
     function openWalletModal() { document.getElementById('walletModal').classList.remove('hidden'); }
     function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
 
+    function getProvider(type) {
+      if (type === 'okx') {
+        if (window.okxwallet) return window.okxwallet;
+        if (window.ethereum?.isOkxWallet) return window.ethereum;
+        if (window.ethereum?.providers) return window.ethereum.providers.find(p => p.isOkxWallet);
+      }
+      if (type === 'metamask') {
+        if (window.ethereum?.isMetaMask && !window.ethereum?.isOkxWallet) return window.ethereum;
+        if (window.ethereum?.providers) return window.ethereum.providers.find(p => p.isMetaMask && !p.isOkxWallet);
+      }
+      return window.ethereum || null;
+    }
+
     async function connectSpecificWallet(type) {
       closeWalletModal();
-      const currentUrl = window.location.href;
+      const p = getProvider(type);
 
-      // 1. 如果检测到浏览器有以太坊提供者 (PC 插件 / 手机 Web3 钱包内置浏览器)
-      if (typeof window.ethereum !== 'undefined') {
+      if (p && typeof p.request === 'function') {
         try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.send("eth_requestAccounts", []);
-          if (accounts.length > 0) {
+          const accounts = await p.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts.length > 0) {
             realAccount = accounts[0];
+            activeProvider = p;
             const short = realAccount.substring(0, 5) + '...' + realAccount.substring(realAccount.length - 4);
             const btn = document.getElementById('walletBtn');
             btn.innerText = `🟢 ${short}`;
@@ -577,45 +587,39 @@
             return;
           }
         } catch (err) {
-          alert("⚠️ 钱包连接被拒绝: " + (err.message || err));
+          if (err.code === 4001) alert("用户已取消连接。");
+          else alert("⚠️ 连接失败: " + (err.message || JSON.stringify(err)));
           return;
         }
       }
 
-      // 2. 如果未安装或在普通手机浏览器中打开，提供真实跳转
       if (type === 'metamask') {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          // 手机端直接拉起 MetaMask App Deep Link
-          window.location.href = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
-        } else {
-          // PC 端跳转 Chrome 插件商店 / 官网
-          if (confirm("未检测到 MetaMask 插件，是否前往官方页面安装？")) {
-            window.open('https://metamask.io/download/', '_blank');
-          }
-        }
+        if (isMobile) window.location.href = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+        else if (confirm("未检测到 MetaMask 插件，是否前往官网安装？")) window.open('https://metamask.io/download/', '_blank');
       } else if (type === 'okx') {
-        if (confirm("未检测到 OKX 钱包，是否前往 OKX Web3 官网安装？")) {
-          window.open('https://www.okx.com/web3', '_blank');
-        }
+        if (confirm("未检测到 OKX 钱包插件，是否前往 OKX 官网安装？")) window.open('https://www.okx.com/web3', '_blank');
       } else {
-        alert("❌ 未检测到支持的 Web3 插件环境，请安装 MetaMask 或使用 OKX 钱包打开本页面。");
+        alert("❌ 当前环境未检测到 Web3 插件。");
       }
     }
 
     async function signRecordOnChain() {
-      if (!realAccount || typeof window.ethereum === 'undefined') {
+      if (!realAccount || !activeProvider) {
         alert("⚠️ 请先在主界面点击 CONNECT WALLET 连接真实钱包！");
         return;
       }
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
         const msg = `[QUANTUM OVERLOAD 战绩凭据]\n玩家: ${realAccount}\n得分: ${score}\n时间: ${new Date().toLocaleString()}`;
-        const sig = await signer.signMessage(msg);
-        alert(`✅ 战绩链上签名验证成功！\nHash: ${sig.substring(0, 20)}...`);
+        const hexMsg = "0x" + Array.from(new TextEncoder().encode(msg)).map(b => b.toString(16).padStart(2, '0')).join('');
+        const sig = await activeProvider.request({
+          method: 'personal_sign',
+          params: [hexMsg, realAccount]
+        });
+        alert(`✅ 战绩链上签名成功！\nHash: ${sig.substring(0, 22)}...`);
       } catch(e) {
-        alert("签名已取消。");
+        if (e.code === 4001) alert("已取消签名。");
+        else alert("签名失败: " + (e.message || e));
       }
     }
 
@@ -686,7 +690,7 @@
       } catch(e) {}
     }
 
-    /* --- 核心游戏参数（雷霆战机经典结构） --- */
+    /* --- 核心游戏参数与无限波次系统 (Infinite Wave System) --- */
     let frameCount = 0;
     let score = 0;
     let hp = 3;
@@ -697,23 +701,20 @@
     let isPaused = false;
     let screenShake = 0;
 
-    // 波次系统 (Wave System)
-    let currentWave = 1;
-    let waveTimer = 0;
-    let tutorialText = "按住鼠标拖拽 或 WASD 操控战机";
-    let tutorialTimer = 180; // 开局显示 3 秒
+    // 🌟 无限星区与战役系统
+    let currentSector = 1;      // 当前第几个星区 (无限递增)
+    let sectorScoreProgress = 0;// 当前星区击杀积分进度
+    let sectorBossSpawned = false;
+    let patrolSpawnTimer = 0;   // 连续巡逻机刷怪计时器
 
-    // 暴走模式 (Overdrive)
-    let powerCount = 0; // 吃 3 个 P 暴走
-    let overdriveTimer = 0; // 暴走剩余帧数
+    let powerCount = 0;
+    let overdriveTimer = 0;
 
-    // 技能冷却
     let shieldCD = 0;
     let hyperBeamCD = 0;
     let activeShieldTimer = 0;
     let activeHyperTimer = 0;
 
-    // 战机属性
     const player = {
       x: 240,
       y: 650,
@@ -721,25 +722,23 @@
       grazeR: 32,
       level: 1,
       exp: 0,
-      nextExp: 60, // 初始升级所需蓝水晶
+      nextExp: 60,
       invincibleTimer: 0,
       primaryFireTimer: 0,
-      weaponLevel: 1, // 1: 双发 | 2: 四联 | 3: 散弹 | 4: 极速激光
+      weaponLevel: 1,
       droneCount: 0,
       teslaLevel: 0
     };
 
-    // 实体数组
     let playerBullets = [];
     let enemies = [];
     let enemyBullets = [];
-    let dropItems = []; // 掉落水晶与 P 符
-    let particles = [];
+    let dropItems = [];
     let floatingTexts = [];
     let boss = null;
     let currentUpgradeChoices = [];
 
-    /* --- 操控系统（鼠标 + 键盘完全融合） --- */
+    /* --- 键盘与鼠标输入 --- */
     const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false, Shift: false };
 
     window.addEventListener('keydown', e => {
@@ -755,7 +754,6 @@
       }
       if (e.code === 'Escape') togglePause();
 
-      // 肉鸽选卡
       if (!document.getElementById('upgradeOverlay').classList.contains('hidden')) {
         if (e.key === '1' && currentUpgradeChoices[0]) selectUpgrade(currentUpgradeChoices[0].id);
         if (e.key === '2' && currentUpgradeChoices[1]) selectUpgrade(currentUpgradeChoices[1].id);
@@ -795,18 +793,18 @@
       document.getElementById('bossHud').style.display = 'none';
     }
 
-    /* --- 技能系统 --- */
+    /* --- 主动战术技能 --- */
     function useShield() {
       if (shieldCD > 0 || !isGameRunning || isPaused) return;
-      shieldCD = 720; // 12秒 CD
-      activeShieldTimer = 180; // 持续 3 秒
+      shieldCD = 720;
+      activeShieldTimer = 180;
       playTone(500, 'triangle', 0.4, 0.2);
-      floatingTexts.push({ x: player.x, y: player.y - 30, text: '🛡️ 量子能量护盾!', color: '#38bdf8', life: 1.2 });
+      floatingTexts.push({ x: player.x, y: player.y - 30, text: '🛡️ 量子护盾!', color: '#38bdf8', life: 1.2 });
     }
 
     function useHyperBeam() {
       if (hyperBeamCD > 0 || !isGameRunning || isPaused) return;
-      hyperBeamCD = 900; // 15秒 CD
+      hyperBeamCD = 900;
       activeHyperTimer = 100;
       triggerShake(6);
       playTone(300, 'sawtooth', 0.8, 0.3);
@@ -819,92 +817,113 @@
       triggerShake(8);
       playTone(180, 'sine', 0.6, 0.3);
       enemyBullets = [];
-      enemies.forEach(en => en.hp -= 20);
+      enemies.forEach(en => en.hp -= 30);
       floatingTexts.push({ x: player.x, y: player.y - 35, text: '💥 全屏 EMP 必杀!', color: '#38bdf8', life: 1.5 });
     }
 
     function triggerShake(magnitude) { screenShake = Math.max(screenShake, magnitude); }
 
-    /* --- 雷霆战机波次生成逻辑 (Stage Waves) --- */
+    /* --- 🌟 无限波次导演引擎 (Wave Director) --- */
     function updateWaves() {
-      waveTimer++;
-      const waveTxt = document.getElementById('waveDisplay');
+      patrolSpawnTimer++;
 
-      // Wave 1: 新手侦察机队列 (慢速 V 字阵型)
-      if (waveTimer === 60) {
-        waveTxt.innerText = "WAVE 1: 侦察前哨";
-        for (let i = 0; i < 5; i++) {
-          enemies.push({
-            x: W / 2 + (i - 2) * 55,
-            y: -30 - Math.abs(i - 2) * 30,
-            vx: 0,
-            vy: 1.2,
-            hp: 6,
-            maxHp: 6,
-            r: 12,
-            type: 'scout',
-            color: '#38bdf8'
-          });
+      // 如果当前没有 Boss 在场，持续无限刷出各型杂兵编队
+      if (!boss && !sectorBossSpawned) {
+        // 每 150 帧 (2.5秒) 随机刷出一个经典编队
+        if (patrolSpawnTimer % 160 === 0) {
+          const pattern = Math.floor(Math.random() * 4);
+          const hpScale = 1 + (currentSector - 1) * 0.35; // 随关卡递增血量
+
+          if (pattern === 0) {
+            // 阵型 1: V字形侦察机小队 (5架)
+            for (let i = 0; i < 5; i++) {
+              enemies.push({
+                x: W / 2 + (i - 2) * 55,
+                y: -30 - Math.abs(i - 2) * 28,
+                vx: 0,
+                vy: 1.3,
+                hp: Math.floor(6 * hpScale),
+                maxHp: Math.floor(6 * hpScale),
+                r: 12,
+                type: 'scout',
+                color: '#38bdf8'
+              });
+            }
+          } else if (pattern === 1) {
+            // 阵型 2: 左右两翼穿插突击机 (4架)
+            for (let i = 0; i < 4; i++) {
+              enemies.push({
+                x: i % 2 === 0 ? 35 : W - 35,
+                y: -20 - i * 45,
+                vx: i % 2 === 0 ? 0.9 : -0.9,
+                vy: 1.7,
+                hp: Math.floor(12 * hpScale),
+                maxHp: Math.floor(12 * hpScale),
+                r: 14,
+                type: 'assault',
+                color: '#a855f7'
+              });
+            }
+          } else if (pattern === 2) {
+            // 阵型 3: 重装巡洋舰 + 护航机
+            enemies.push({
+              x: Math.random() * (W - 120) + 60,
+              y: -50,
+              vx: (Math.random() - 0.5) * 0.6,
+              vy: 0.9,
+              targetY: Math.random() * 80 + 100,
+              hp: Math.floor(55 * hpScale),
+              maxHp: Math.floor(55 * hpScale),
+              r: 22,
+              type: 'frigate',
+              color: '#f97316'
+            });
+          } else if (pattern === 3) {
+            // 阵型 4: 高速自爆小无人机群 (6架一字排开)
+            for (let i = 0; i < 6; i++) {
+              enemies.push({
+                x: 35 + i * ((W - 70) / 5),
+                y: -20 - (i % 2) * 25,
+                vx: 0,
+                vy: 2.2,
+                hp: Math.floor(4 * hpScale),
+                maxHp: Math.floor(4 * hpScale),
+                r: 10,
+                type: 'drone_rush',
+                color: '#ef4444'
+              });
+            }
+          }
         }
-      }
 
-      // Wave 2: 突击机两翼穿插
-      if (waveTimer === 450) {
-        waveTxt.innerText = "WAVE 2: 突击编队";
-        for (let i = 0; i < 6; i++) {
-          enemies.push({
-            x: (i % 2 === 0 ? 40 : W - 40),
-            y: -20 - i * 40,
-            vx: (i % 2 === 0 ? 0.8 : -0.8),
-            vy: 1.6,
-            hp: 12,
-            maxHp: 12,
-            r: 14,
-            type: 'assault',
-            color: '#a855f7'
-          });
+        // 当前星区击杀积累达到 800 分时，呼叫当前星区 Boss 降临！
+        if (sectorScoreProgress >= 800) {
+          sectorBossSpawned = true;
+          document.getElementById('waveDisplay').innerText = `⚠️ SECTOR ${currentSector} BOSS`;
+          floatingTexts.push({ x: W / 2, y: H * 0.4, text: '⚠️ WARNING: BOSS INCOMING!', color: '#ef4444', life: 2.5 });
+          
+          const bossHp = Math.floor(200 * (1 + (currentSector - 1) * 0.6));
+          boss = {
+            x: W / 2,
+            y: -60,
+            targetY: 130,
+            hp: bossHp,
+            maxHp: bossHp,
+            hitR: 30,
+            rot: 0,
+            hitFlash: 0,
+            fireTimer: 0,
+            name: `SECTOR ${currentSector} CORE`
+          };
+          document.getElementById('bossName').innerText = boss.name;
+          document.getElementById('bossHud').style.display = 'block';
+          triggerShake(8);
+          playTone(180, 'sawtooth', 1.2, 0.35);
         }
-      }
-
-      // Wave 3: 重装护卫舰 (精英小Boss)
-      if (waveTimer === 900) {
-        waveTxt.innerText = "WAVE 3: 重装护卫舰";
-        enemies.push({
-          x: W / 2,
-          y: -40,
-          vx: 0,
-          vy: 1.0,
-          targetY: 120,
-          hp: 60,
-          maxHp: 60,
-          r: 22,
-          type: 'frigate',
-          color: '#f97316'
-        });
-      }
-
-      // 阶段 1 终极 Boss 出现
-      if (waveTimer === 1500 && !boss) {
-        waveTxt.innerText = "⚠️ WARNING: BOSS";
-        boss = {
-          x: W / 2,
-          y: -60,
-          targetY: 130,
-          hp: 220,
-          maxHp: 220,
-          hitR: 30,
-          rot: 0,
-          hitFlash: 0,
-          fireTimer: 0,
-          name: 'QUANTUM CORE'
-        };
-        document.getElementById('bossHud').style.display = 'block';
-        triggerShake(6);
-        playTone(200, 'sawtooth', 1.0, 0.3);
       }
     }
 
-    /* --- 敌机更新与掉落物逻辑 --- */
+    /* --- 敌机行为与掉落物 --- */
     function updateEnemies() {
       enemies = enemies.filter(en => {
         if (en.targetY && en.y < en.targetY) {
@@ -914,42 +933,39 @@
           en.y += en.vy;
         }
 
-        // 敌机开火 (慢速瞄准弹)
-        if (en.type === 'assault' && frameCount % 90 === 0) {
+        // 开火逻辑
+        if (en.type === 'assault' && frameCount % 80 === 0) {
           const ang = Math.atan2(player.y - en.y, player.x - en.x);
-          enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 2.2, vy: Math.sin(ang) * 2.2, r: 4, color: '#ef4444' });
-        } else if (en.type === 'frigate' && frameCount % 60 === 0) {
+          enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 2.3, vy: Math.sin(ang) * 2.3, r: 4, color: '#ef4444' });
+        } else if (en.type === 'frigate' && frameCount % 50 === 0) {
           for (let i = -1; i <= 1; i++) {
-            const ang = Math.atan2(player.y - en.y, player.x - en.x) + i * 0.3;
-            enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 2.5, vy: Math.sin(ang) * 2.5, r: 4.5, color: '#f97316' });
+            const ang = Math.atan2(player.y - en.y, player.x - en.x) + i * 0.28;
+            enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 2.6, vy: Math.sin(ang) * 2.6, r: 4.5, color: '#f97316' });
           }
         }
 
-        // 绘制敌机
         ctx.fillStyle = en.color;
         ctx.beginPath();
         ctx.arc(en.x, en.y, en.r, 0, Math.PI * 2);
         ctx.fill();
 
-        // 击杀与掉落物爆破
         if (en.hp <= 0) {
-          score += en.maxHp * 10;
+          const pts = en.maxHp * 8;
+          score += pts;
+          sectorScoreProgress += pts;
           document.getElementById('scoreDisplay').innerText = score;
           triggerShake(2);
           playTone(400, 'square', 0.1, 0.1);
 
-          // 1. 掉落蓝水晶 (加经验)
           dropItems.push({ x: en.x - 6, y: en.y, type: 'exp', vy: 1.5 });
           dropItems.push({ x: en.x + 6, y: en.y, type: 'exp', vy: 1.5 });
 
-          // 2. 概率掉落大 P 符 (强化主炮 / 暴走)
-          if (Math.random() < 0.4 || en.type === 'frigate') {
+          if (Math.random() < 0.35 || en.type === 'frigate') {
             dropItems.push({ x: en.x, y: en.y, type: 'power', vy: 1.2 });
           }
-
           return false;
         }
-        return en.y < H + 40;
+        return en.y < H + 40 && en.x > -40 && en.x < W + 40;
       });
 
       // Boss 逻辑
@@ -963,15 +979,14 @@
         document.getElementById('bossHpPercent').innerText = `${hpPct}%`;
         document.getElementById('bossBarFill').style.width = `${hpPct}%`;
 
-        // Boss 螺旋与散弹开火
-        if (boss.fireTimer % 20 === 0) {
-          for (let i = 0; i < 4; i++) {
-            const ang = boss.rot + (i * Math.PI / 2);
+        if (boss.fireTimer % 18 === 0) {
+          const bulletCount = 4 + (currentSector > 1 ? 2 : 0);
+          for (let i = 0; i < bulletCount; i++) {
+            const ang = boss.rot + (i * Math.PI * 2 / bulletCount);
             enemyBullets.push({ x: boss.x, y: boss.y, vx: Math.cos(ang) * 2.8, vy: Math.sin(ang) * 2.8, r: 5, color: '#ef4444' });
           }
         }
 
-        // 绘制 Boss
         ctx.save();
         ctx.translate(boss.x, boss.y);
         ctx.rotate(boss.rot);
@@ -981,31 +996,44 @@
         ctx.restore();
         if (boss.hitFlash > 0) boss.hitFlash--;
 
+        // 🌟 击败 Boss -> 开启下一星区！无限循环！
         if (boss.hp <= 0) {
           score += 2000;
           qdustTokens += 150;
           refreshTokensUI();
-          triggerShake(8);
-          floatingTexts.push({ x: boss.x, y: boss.y, text: '🏆 BOSS DESTROYED! +150 $QDUST', color: '#fbbf24', life: 2.0 });
+          triggerShake(10);
+          floatingTexts.push({ x: boss.x, y: boss.y, text: `🎉 SECTOR ${currentSector} CLEARED! +150 $QDUST`, color: '#fbbf24', life: 2.5 });
+          
+          // 爆出满屏奖励物资
+          for (let i = 0; i < 8; i++) {
+            dropItems.push({ x: boss.x + (Math.random()-0.5)*60, y: boss.y + (Math.random()-0.5)*40, type: 'exp', vy: 1.5 });
+            dropItems.push({ x: boss.x + (Math.random()-0.5)*60, y: boss.y + (Math.random()-0.5)*40, type: 'power', vy: 1.2 });
+          }
+
           document.getElementById('bossHud').style.display = 'none';
           boss = null;
+          
+          // 升级到下一个星区，重置进度
+          currentSector++;
+          sectorScoreProgress = 0;
+          sectorBossSpawned = false;
+          document.getElementById('waveDisplay').innerText = `SECTOR ${currentSector}`;
         }
       }
     }
 
-    /* --- 掉落物与磁吸拾取系统 --- */
+    /* --- 水晶与暴走 P 符 --- */
     function updateDropItems() {
       dropItems = dropItems.filter(item => {
-        // 磁力吸附靠近战机
         const dist = Math.hypot(player.x - item.x, player.y - item.y);
-        if (dist < 100) {
-          item.x += (player.x - item.x) * 0.15;
-          item.y += (player.y - item.y) * 0.15;
+        // 全屏强力磁吸
+        if (dist < 110) {
+          item.x += (player.x - item.x) * 0.18;
+          item.y += (player.y - item.y) * 0.18;
         } else {
           item.y += item.vy;
         }
 
-        // 拾取判定
         if (dist < player.grazeR + 10) {
           if (item.type === 'exp') {
             player.exp += 20;
@@ -1022,7 +1050,7 @@
             playTone(1100, 'triangle', 0.1, 0.08);
             if (powerCount >= 3) {
               powerCount = 0;
-              overdriveTimer = 360; // 开启 6 秒暴走
+              overdriveTimer = 360;
               floatingTexts.push({ x: player.x, y: player.y - 40, text: '🔥 OVERDRIVE 战机暴走!', color: '#fbbf24', life: 1.5 });
               triggerShake(4);
             } else {
@@ -1032,7 +1060,6 @@
           return false;
         }
 
-        // 绘制掉落物
         if (item.type === 'exp') {
           ctx.fillStyle = '#38bdf8';
           ctx.beginPath();
@@ -1050,11 +1077,10 @@
         return item.y < H + 20;
       });
 
-      // 更新暴走进度条
       document.getElementById('rageBar').style.width = overdriveTimer > 0 ? `${(overdriveTimer / 360) * 100}%` : `${(powerCount / 3) * 100}%`;
     }
 
-    /* --- 主武器连射与暴走弹道 --- */
+    /* --- 开火与弹道 --- */
     function handlePlayerShooting() {
       player.primaryFireTimer++;
       const isOverdrive = overdriveTimer > 0;
@@ -1066,13 +1092,11 @@
       if (player.primaryFireTimer % fireRate === 0) {
         const dmg = isOverdrive ? 4.5 : 2.0;
         if (isOverdrive) {
-          // 暴走状态全屏 5 连重炮
           for (let i = -2; i <= 2; i++) {
             playerBullets.push({ x: player.x + i * 8, y: player.y - 12, vx: i * 1.5, vy: -15, dmg: dmg, color: '#fbbf24' });
           }
           playTone(980, 'square', 0.04, 0.03);
         } else {
-          // 常规等级主炮
           if (player.weaponLevel === 1) {
             playerBullets.push({ x: player.x - 6, y: player.y - 12, vx: 0, vy: -13, dmg: dmg, color: bulletColor });
             playerBullets.push({ x: player.x + 6, y: player.y - 12, vx: 0, vy: -13, dmg: dmg, color: bulletColor });
@@ -1085,7 +1109,6 @@
         }
       }
 
-      // 聚能炮贯穿
       if (activeHyperTimer > 0) {
         activeHyperTimer--;
         ctx.fillStyle = 'rgba(251, 191, 36, 0.85)';
@@ -1102,7 +1125,6 @@
         });
       }
 
-      // 玩家子弹飞行与击中
       playerBullets = playerBullets.filter(b => {
         b.x += b.vx;
         b.y += b.vy;
@@ -1125,7 +1147,7 @@
       });
     }
 
-    /* --- 肉鸽升级系统 --- */
+    /* --- 肉鸽升级 --- */
     const ALL_UPGRADES = [
       { id: 'w_power', title: '主炮超频火力 (Power Boost)', desc: '直接增加 1 档常驻主炮等级，并提高 20% 基础伤害' },
       { id: 'drone', title: '量子自律浮游机 (Drone)', desc: '部署 1 架协同护航副炮（最多 2 架），自动开火' },
@@ -1175,7 +1197,6 @@
       if (hyperBeamCD > 0) hyperBeamCD--;
       if (activeShieldTimer > 0) activeShieldTimer--;
 
-      // 技能按钮 UI
       document.getElementById('btnShield').classList.toggle('ready', shieldCD <= 0);
       document.getElementById('cdShield').innerText = shieldCD <= 0 ? '[Q] READY' : `[Q] ${Math.ceil(shieldCD/60)}s`;
       document.getElementById('btnHyper').classList.toggle('ready', hyperBeamCD <= 0);
@@ -1183,7 +1204,6 @@
       document.getElementById('btnEmp').classList.toggle('ready', empEnergy >= maxEmp);
       document.getElementById('cdEmp').innerText = empEnergy >= maxEmp ? '[SPACE] READY' : `[SPACE] ${Math.floor((empEnergy/maxEmp)*100)}%`;
 
-      // 键盘移动逻辑
       const spd = keys.Shift ? 2.8 : 6.2;
       let mx = 0, my = 0;
       if (keys.w || keys.ArrowUp) my -= 1;
@@ -1206,20 +1226,17 @@
       ctx.fillStyle = '#050711';
       ctx.fillRect(0, 0, W, H);
 
-      // 背景网格流动
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
       const offset = (frameCount * 2) % 40;
       for (let y = offset; y < H; y += 40) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
       }
 
-      // 波次、掉落物与开火
       updateWaves();
       updateEnemies();
       updateDropItems();
       handlePlayerShooting();
 
-      // 敌方子弹飞行与碰撞
       enemyBullets = enemyBullets.filter(b => {
         b.x += b.vx;
         b.y += b.vy;
@@ -1231,17 +1248,14 @@
 
         const dist = Math.hypot(b.x - player.x, b.y - player.y);
 
-        // 护盾抵挡
         if (activeShieldTimer > 0 && dist < player.grazeR + 8) return false;
 
-        // 擦弹
         if (dist < player.grazeR && dist > player.hitR && !b.grazed) {
           b.grazed = true;
           empEnergy = Math.min(maxEmp, empEnergy + 4);
           score += 10;
         }
 
-        // 击中
         if (player.invincibleTimer <= 0 && activeShieldTimer <= 0 && dist < player.hitR + b.r * 0.7) {
           hp--;
           player.invincibleTimer = 50;
@@ -1288,7 +1302,6 @@
         ctx.closePath();
         ctx.fill();
 
-        // 核心红心
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
         ctx.arc(0, 0, player.hitR, 0, Math.PI * 2);
@@ -1296,16 +1309,6 @@
       }
       ctx.restore();
 
-      // 新手引导字幕
-      if (tutorialTimer > 0) {
-        tutorialTimer--;
-        ctx.fillStyle = `rgba(56, 189, 248, ${tutorialTimer / 180})`;
-        ctx.font = 'bold 13px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(tutorialText, W / 2, H * 0.75);
-      }
-
-      // 悬浮提示字
       floatingTexts = floatingTexts.filter(t => {
         t.y -= 0.6; t.life -= 0.015;
         ctx.fillStyle = t.color;
@@ -1337,9 +1340,11 @@
       score = 0;
       hp = 3;
       empEnergy = 0;
-      currentWave = 1;
-      waveTimer = 0;
-      tutorialTimer = 180;
+      currentSector = 1;
+      sectorScoreProgress = 0;
+      sectorBossSpawned = false;
+      patrolSpawnTimer = 0;
+
       powerCount = 0;
       overdriveTimer = 0;
       shieldCD = 0;
@@ -1364,7 +1369,7 @@
       updateHpUI();
       document.getElementById('scoreDisplay').innerText = '0';
       document.getElementById('lvlDisplay').innerText = '1';
-      document.getElementById('waveDisplay').innerText = 'WAVE 1';
+      document.getElementById('waveDisplay').innerText = 'SECTOR 1';
       document.getElementById('bossHud').style.display = 'none';
       document.getElementById('gameOverOverlay').classList.add('hidden');
       document.getElementById('upgradeOverlay').classList.add('hidden');
