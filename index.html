@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>QUANTUM OVERLOAD: 雷霆战机无限版</title>
+  <title>QUANTUM OVERLOAD: 雷霆战机Web3版</title>
   <style>
     * {
       box-sizing: border-box;
@@ -87,7 +87,7 @@
       box-shadow: 0 0 8px #ef4444;
     }
 
-    /* 暴走怒气条 */
+    /* 暴走蓄能条 */
     .rage-bar-container {
       width: 100%;
       height: 4px;
@@ -358,7 +358,7 @@
   <div id="game-container">
     <canvas id="gameCanvas"></canvas>
 
-    <!-- 顶部战斗 HUD -->
+    <!-- 顶部 HUD -->
     <div class="hud">
       <div class="hud-block">
         <div class="hud-title">SCORE / BEST</div>
@@ -535,7 +535,7 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    /* --- 真实 Web3 钱包（原生 EIP-1193，解决 chain is not set up） --- */
+    /* --- 真实 Web3 钱包（自动切换以太坊主网，解决 chain is not set up） --- */
     let realAccount = null;
     let activeProvider = null;
     let qdustTokens = parseInt(localStorage.getItem('qo_qdust_tokens') || '0');
@@ -570,7 +570,28 @@
 
       if (p && typeof p.request === 'function') {
         try {
-          const accounts = await p.request({ method: 'eth_requestAccounts' });
+          // 步骤 1: 尝试直接请求账户
+          let accounts = [];
+          try {
+            accounts = await p.request({ method: 'eth_requestAccounts' });
+          } catch (reqErr) {
+            // 步骤 2: 捕获 "chain is not set up"，主动要求钱包切换/初始化到以太坊网络 0x1
+            if (reqErr.message && reqErr.message.includes('chain is not set up')) {
+              try {
+                await p.request({
+                  method: 'wallet_switchEthereumChain',
+                  params: [{ chainId: '0x1' }]
+                });
+                accounts = await p.request({ method: 'eth_requestAccounts' });
+              } catch (switchErr) {
+                alert("⚠️ 请在您的钱包顶部将网络切换为以太坊 (Ethereum) 或任意 EVM 网络后再试！");
+                return;
+              }
+            } else {
+              throw reqErr;
+            }
+          }
+
           if (accounts && accounts.length > 0) {
             realAccount = accounts[0];
             activeProvider = p;
@@ -588,7 +609,7 @@
           }
         } catch (err) {
           if (err.code === 4001) alert("用户已取消连接。");
-          else alert("⚠️ 连接失败: " + (err.message || JSON.stringify(err)));
+          else alert("⚠️ 连接提示: " + (err.message || JSON.stringify(err)));
           return;
         }
       }
@@ -701,11 +722,10 @@
     let isPaused = false;
     let screenShake = 0;
 
-    // 🌟 无限星区与战役系统
-    let currentSector = 1;      // 当前第几个星区 (无限递增)
-    let sectorScoreProgress = 0;// 当前星区击杀积分进度
+    let currentSector = 1;
+    let sectorScoreProgress = 0;
     let sectorBossSpawned = false;
-    let patrolSpawnTimer = 0;   // 连续巡逻机刷怪计时器
+    let patrolSpawnTimer = 0;
 
     let powerCount = 0;
     let overdriveTimer = 0;
@@ -827,15 +847,12 @@
     function updateWaves() {
       patrolSpawnTimer++;
 
-      // 如果当前没有 Boss 在场，持续无限刷出各型杂兵编队
       if (!boss && !sectorBossSpawned) {
-        // 每 150 帧 (2.5秒) 随机刷出一个经典编队
         if (patrolSpawnTimer % 160 === 0) {
           const pattern = Math.floor(Math.random() * 4);
-          const hpScale = 1 + (currentSector - 1) * 0.35; // 随关卡递增血量
+          const hpScale = 1 + (currentSector - 1) * 0.35;
 
           if (pattern === 0) {
-            // 阵型 1: V字形侦察机小队 (5架)
             for (let i = 0; i < 5; i++) {
               enemies.push({
                 x: W / 2 + (i - 2) * 55,
@@ -850,7 +867,6 @@
               });
             }
           } else if (pattern === 1) {
-            // 阵型 2: 左右两翼穿插突击机 (4架)
             for (let i = 0; i < 4; i++) {
               enemies.push({
                 x: i % 2 === 0 ? 35 : W - 35,
@@ -865,7 +881,6 @@
               });
             }
           } else if (pattern === 2) {
-            // 阵型 3: 重装巡洋舰 + 护航机
             enemies.push({
               x: Math.random() * (W - 120) + 60,
               y: -50,
@@ -879,7 +894,6 @@
               color: '#f97316'
             });
           } else if (pattern === 3) {
-            // 阵型 4: 高速自爆小无人机群 (6架一字排开)
             for (let i = 0; i < 6; i++) {
               enemies.push({
                 x: 35 + i * ((W - 70) / 5),
@@ -896,7 +910,6 @@
           }
         }
 
-        // 当前星区击杀积累达到 800 分时，呼叫当前星区 Boss 降临！
         if (sectorScoreProgress >= 800) {
           sectorBossSpawned = true;
           document.getElementById('waveDisplay').innerText = `⚠️ SECTOR ${currentSector} BOSS`;
@@ -933,7 +946,6 @@
           en.y += en.vy;
         }
 
-        // 开火逻辑
         if (en.type === 'assault' && frameCount % 80 === 0) {
           const ang = Math.atan2(player.y - en.y, player.x - en.x);
           enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 2.3, vy: Math.sin(ang) * 2.3, r: 4, color: '#ef4444' });
@@ -968,7 +980,6 @@
         return en.y < H + 40 && en.x > -40 && en.x < W + 40;
       });
 
-      // Boss 逻辑
       if (boss) {
         boss.fireTimer++;
         if (boss.y < boss.targetY) boss.y += 1.0;
@@ -996,7 +1007,6 @@
         ctx.restore();
         if (boss.hitFlash > 0) boss.hitFlash--;
 
-        // 🌟 击败 Boss -> 开启下一星区！无限循环！
         if (boss.hp <= 0) {
           score += 2000;
           qdustTokens += 150;
@@ -1004,7 +1014,6 @@
           triggerShake(10);
           floatingTexts.push({ x: boss.x, y: boss.y, text: `🎉 SECTOR ${currentSector} CLEARED! +150 $QDUST`, color: '#fbbf24', life: 2.5 });
           
-          // 爆出满屏奖励物资
           for (let i = 0; i < 8; i++) {
             dropItems.push({ x: boss.x + (Math.random()-0.5)*60, y: boss.y + (Math.random()-0.5)*40, type: 'exp', vy: 1.5 });
             dropItems.push({ x: boss.x + (Math.random()-0.5)*60, y: boss.y + (Math.random()-0.5)*40, type: 'power', vy: 1.2 });
@@ -1013,7 +1022,6 @@
           document.getElementById('bossHud').style.display = 'none';
           boss = null;
           
-          // 升级到下一个星区，重置进度
           currentSector++;
           sectorScoreProgress = 0;
           sectorBossSpawned = false;
@@ -1026,7 +1034,6 @@
     function updateDropItems() {
       dropItems = dropItems.filter(item => {
         const dist = Math.hypot(player.x - item.x, player.y - item.y);
-        // 全屏强力磁吸
         if (dist < 110) {
           item.x += (player.x - item.x) * 0.18;
           item.y += (player.y - item.y) * 0.18;
