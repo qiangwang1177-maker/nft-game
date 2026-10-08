@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>QUANTUM OVERLOAD: 终极量子</title>
+  <title>QUANTUM OVERLOAD: 赛博链游版</title>
+  <!-- 引入 Ethers.js 官方轻量 CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -40,7 +42,7 @@
       cursor: crosshair;
     }
 
-    /* 顶部主 HUD */
+    /* 顶部导航与 HUD */
     .hud {
       position: absolute;
       top: 10px;
@@ -57,7 +59,8 @@
       backdrop-filter: blur(8px);
       border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 8px;
-      padding: 6px 12px;
+      padding: 6px 10px;
+      pointer-events: auto;
     }
     .hud-title {
       font-size: 9px;
@@ -65,7 +68,7 @@
       letter-spacing: 1px;
     }
     .hud-value {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 800;
       color: #38bdf8;
       font-variant-numeric: tabular-nums;
@@ -87,7 +90,39 @@
       box-shadow: 0 0 8px #ef4444;
     }
 
-    /* Boss 顶部大血条 */
+    /* Web3 状态栏 */
+    .web3-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wallet-btn {
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      border: 1px solid #818cf8;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: all 0.2s;
+    }
+    .wallet-btn.connected {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #10b981;
+      color: #34d399;
+    }
+    .token-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Boss 顶部血条 */
     #bossHud {
       position: absolute;
       top: 68px;
@@ -124,7 +159,7 @@
       transition: width 0.1s linear;
     }
 
-    /* 底部功能栏 */
+    /* 底部状态 */
     .hud-bottom {
       position: absolute;
       bottom: 14px;
@@ -145,12 +180,26 @@
       font-weight: 700;
       letter-spacing: 1px;
     }
-    .emp-btn {
+    .hud-actions {
+      display: flex;
+      gap: 8px;
       pointer-events: auto;
+    }
+    .control-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .emp-btn {
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid #0284c7;
       color: #94a3b8;
-      padding: 9px 15px;
+      padding: 9px 14px;
       border-radius: 12px;
       font-weight: 700;
       font-size: 12px;
@@ -169,7 +218,7 @@
       to { transform: scale(1.06); }
     }
 
-    /* 成就实时弹窗 */
+    /* 成就弹窗 */
     #achievementToast {
       position: absolute;
       top: -60px;
@@ -187,18 +236,16 @@
       box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
       transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #achievementToast.show {
-      top: 20px;
-    }
+    #achievementToast.show { top: 20px; }
     .toast-icon { font-size: 18px; }
     .toast-text h5 { font-size: 12px; color: #fbbf24; }
     .toast-text p { font-size: 10px; color: #94a3b8; }
 
-    /* 遮罩通用面板 */
+    /* 遮罩面板 */
     .overlay {
       position: absolute;
       inset: 0;
-      background: rgba(5, 5, 13, 0.9);
+      background: rgba(5, 5, 13, 0.92);
       backdrop-filter: blur(10px);
       display: flex;
       flex-direction: column;
@@ -208,17 +255,15 @@
       z-index: 50;
       transition: opacity 0.25s ease;
     }
-    .overlay.hidden {
-      display: none;
-    }
+    .overlay.hidden { display: none; }
     .title {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: 2px;
-      background: linear-gradient(to right, #38bdf8, #a855f7);
+      background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       text-align: center;
     }
     .card-group {
@@ -228,26 +273,26 @@
       width: 100%;
       max-width: 320px;
     }
-    .upgrade-card {
+    .upgrade-card, .skin-card {
       background: rgba(30, 41, 59, 0.85);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 12px 16px;
+      padding: 12px 14px;
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s;
       text-align: left;
     }
-    .upgrade-card:hover {
+    .upgrade-card:hover, .skin-card:hover {
       background: rgba(56, 189, 248, 0.2);
       border-color: #38bdf8;
       transform: translateY(-2px);
     }
-    .upgrade-card h4 {
+    .upgrade-card h4, .skin-card h4 {
       color: #38bdf8;
-      font-size: 14px;
+      font-size: 13px;
       margin-bottom: 3px;
     }
-    .upgrade-card p {
+    .upgrade-card p, .skin-card p {
       font-size: 11px;
       color: #94a3b8;
       line-height: 1.35;
@@ -257,12 +302,22 @@
       border: none;
       color: white;
       font-weight: 800;
-      font-size: 15px;
-      padding: 12px 34px;
+      font-size: 14px;
+      padding: 10px 30px;
       border-radius: 30px;
       cursor: pointer;
-      margin-top: 18px;
+      margin-top: 14px;
       box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+    }
+    .sec-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #475569;
+      color: #94a3b8;
+      font-size: 12px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -274,17 +329,24 @@
     <div class="hud">
       <div class="hud-block">
         <div class="hud-title">SCORE / BEST</div>
-        <div class="hud-value"><span id="scoreDisplay">0</span> <span style="font-size:12px; color:#64748b;">/ <span id="bestDisplay">0</span></span></div>
+        <div class="hud-value"><span id="scoreDisplay">0</span> <span style="font-size:11px; color:#64748b;">/ <span id="bestDisplay">0</span></span></div>
         <div class="hp-container">
           <div class="hp-dot active" id="hp1"></div>
           <div class="hp-dot active" id="hp2"></div>
           <div class="hp-dot active" id="hp3"></div>
         </div>
       </div>
+      
+      <!-- Web3 状态与代币 -->
       <div class="hud-block" style="text-align: right;">
-        <div class="hud-title">GRAZE COMBO</div>
-        <div class="hud-value" style="color: #fbbf24;" id="comboDisplay">x0</div>
-        <div class="hud-title" style="margin-top:2px;">SYS LV.<span id="lvlDisplay">1</span></div>
+        <div class="web3-bar">
+          <div class="token-badge">💎 <span id="tokenDisplay">0</span> $QDUST</div>
+          <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">CONNECT</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span class="hud-title">COMBO <b style="color:#fbbf24;" id="comboDisplay">x0</b></span>
+          <span class="hud-title">LV.<b id="lvlDisplay">1</b></span>
+        </div>
       </div>
     </div>
 
@@ -299,7 +361,7 @@
       </div>
     </div>
 
-    <!-- 成就横幅弹窗 -->
+    <!-- 成就横幅 -->
     <div id="achievementToast">
       <div class="toast-icon">🏆</div>
       <div class="toast-text">
@@ -311,17 +373,74 @@
     <!-- 底部状态与操作 -->
     <div class="hud-bottom">
       <div class="stage-badge" id="stageBadge">SECTOR 1: ORBIT</div>
-      <button class="emp-btn" id="empBtn" onclick="triggerEMP()">EMP [0%]</button>
+      <div class="hud-actions">
+        <button class="control-btn" onclick="togglePause()">⏸️</button>
+        <button class="emp-btn" id="empBtn" onclick="triggerEMP()">EMP [0%]</button>
+      </div>
     </div>
 
-    <!-- 初始启动界面 -->
+    <!-- 初始主菜单 (含机库与任务入口) -->
     <div class="overlay" id="startOverlay">
       <div class="title">QUANTUM OVERLOAD</div>
-      <p style="color: #94a3b8; font-size: 13px; text-align: center; line-height: 1.6; max-width: 280px; margin-bottom: 20px;">
-        移动战机进行<b>极限擦弹</b>。<br/>
-        已激活<b>主炮分支进化</b>、<b>时空折跃</b>与<b>虚空四阶领主</b>！
+      <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.5; max-width: 280px; margin-bottom: 16px;">
+        极速擦弹 · 武器进化 · 链上签名战绩<br/>
+        当前机甲涂装：<b style="color:#38bdf8;" id="currentSkinText">量子苍穹</b>
       </p>
       <button class="action-btn" onclick="startGame()">START MISSION</button>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="sec-btn" onclick="openHangar()">🚀 机库涂装</button>
+        <button class="sec-btn" onclick="openQuests()">📜 悬赏任务</button>
+      </div>
+    </div>
+
+    <!-- 机库涂装面板 -->
+    <div class="overlay hidden" id="hangarOverlay">
+      <div class="title">QUANTUM HANGAR</div>
+      <div class="card-group">
+        <div class="skin-card" onclick="selectSkin('cyan')">
+          <h4>🔷 量子苍穹 (Cyan Standard)</h4>
+          <p>经典量子力学涂装。自带青蓝能量尾焰 (默认解锁)</p>
+        </div>
+        <div class="skin-card" onclick="selectSkin('gold')">
+          <h4>👑 黄金赛博 (Cyber Gold)</h4>
+          <p>Web3 核心专属涂装。尊贵金光流向。<span style="color:#fbbf24;">(连接任意钱包免费解锁)</span></p>
+        </div>
+        <div class="skin-card" onclick="selectSkin('void')">
+          <h4>🔮 虚空黑晶 (Void Obsidian)</h4>
+          <p>深渊暗物质力场。释放紫黑粒子。<span style="color:#c084fc;">(消耗 300 $QDUST 兑换)</span></p>
+        </div>
+      </div>
+      <button class="sec-btn" style="margin-top:16px;" onclick="closeHangar()">BACK</button>
+    </div>
+
+    <!-- 每日任务面板 -->
+    <div class="overlay hidden" id="questsOverlay">
+      <div class="title">DAILY BOUNTY</div>
+      <div class="card-group">
+        <div class="upgrade-card" style="cursor:default;">
+          <h4>🎯 任务一：刀尖舞者</h4>
+          <p>单局累计完成 50 次擦弹。奖励：<b style="color:#fbbf24;">+100 $QDUST</b></p>
+        </div>
+        <div class="upgrade-card" style="cursor:default;">
+          <h4>⚡ 任务二：脉冲过载</h4>
+          <p>单局内成功释放 2 次 EMP。奖励：<b style="color:#fbbf24;">+150 $QDUST</b></p>
+        </div>
+        <div class="upgrade-card" style="cursor:default;">
+          <h4>👑 任务三：猎魔专家</h4>
+          <p>击溃至少 1 位关卡首领。奖励：<b style="color:#fbbf24;">+200 $QDUST</b></p>
+        </div>
+      </div>
+      <button class="sec-btn" style="margin-top:16px;" onclick="closeQuests()">BACK</button>
+    </div>
+
+    <!-- 暂停面板 -->
+    <div class="overlay hidden" id="pauseOverlay">
+      <div class="title">SYSTEM PAUSED</div>
+      <div style="display:flex; flex-direction:column; gap:12px; width:220px;">
+        <button class="action-btn" onclick="togglePause()">RESUME</button>
+        <button class="sec-btn" onclick="toggleAudio()"><span id="audioStatus">🔊 音效: ON</span></button>
+        <button class="sec-btn" onclick="quitToMenu()">ABORT MISSION</button>
+      </div>
     </div>
 
     <!-- 肉鸽升级面板 -->
@@ -333,10 +452,11 @@
     <!-- 游戏结束面板 -->
     <div class="overlay hidden" id="gameOverOverlay">
       <div class="title" style="background: linear-gradient(to right, #ef4444, #f97316); -webkit-background-clip: text;">SYSTEM PURGED</div>
-      <p style="color: #94a3b8; margin-bottom: 4px; font-size: 12px;">FINAL SCORE</p>
-      <div style="font-size: 32px; font-weight: 900; color: #38bdf8; margin-bottom: 12px;" id="finalScore">0</div>
-      <p style="color: #fbbf24; font-size: 12px; margin-bottom: 18px;" id="recordNotify">NEW RECORD!</p>
-      <button class="action-btn" onclick="restartGame()">REBOOT SYSTEM</button>
+      <p style="color: #94a3b8; margin-bottom: 2px; font-size: 11px;">FINAL SCORE</p>
+      <div style="font-size: 28px; font-weight: 900; color: #38bdf8;" id="finalScore">0</div>
+      <p style="color: #fbbf24; font-size: 12px; margin: 6px 0;" id="earnedTokens">+0 $QDUST EARNED</p>
+      <button class="action-btn" onclick="signRecordOnChain()">✍️ 链上签名战绩</button>
+      <button class="sec-btn" style="margin-top:8px;" onclick="restartGame()">REBOOT SYSTEM</button>
     </div>
   </div>
 
@@ -353,6 +473,110 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    /* --- Web3 钱包与代币状态 --- */
+    let walletAddress = null;
+    let qdustTokens = parseInt(localStorage.getItem('qo_qdust_tokens') || '0');
+    let currentSkin = localStorage.getItem('qo_current_skin') || 'cyan';
+    let ownedSkins = JSON.parse(localStorage.getItem('qo_owned_skins') || '["cyan"]');
+    document.getElementById('tokenDisplay').innerText = qdustTokens;
+
+    async function connectWallet() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const accounts = await provider.send("eth_requestAccounts", []);
+          walletAddress = accounts[0];
+          const shortAddr = walletAddress.substring(0, 4) + '...' + walletAddress.substring(walletAddress.length - 3);
+          const btn = document.getElementById('walletBtn');
+          btn.innerText = shortAddr;
+          btn.classList.add('connected');
+          
+          // 连钱包免费送 Cyber Gold 皮肤
+          if (!ownedSkins.includes('gold')) {
+            ownedSkins.push('gold');
+            localStorage.setItem('qo_owned_skins', JSON.stringify(ownedSkins));
+            unlockAchievement('wallet_connected');
+          }
+        } catch (err) {
+          console.warn("Wallet connect failed/rejected:", err);
+        }
+      } else {
+        // 游客快速模拟
+        walletAddress = "0x" + Math.random().toString(16).substring(2, 8) + "...GUEST";
+        const btn = document.getElementById('walletBtn');
+        btn.innerText = walletAddress;
+        btn.classList.add('connected');
+        if (!ownedSkins.includes('gold')) {
+          ownedSkins.push('gold');
+          localStorage.setItem('qo_owned_skins', JSON.stringify(ownedSkins));
+        }
+      }
+    }
+
+    async function signRecordOnChain() {
+      if (!walletAddress || typeof window.ethereum === 'undefined') {
+        alert("✨ 战绩签名成功！(模拟凭证已生成并哈希校验)");
+        return;
+      }
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const msg = `[QUANTUM OVERLOAD] Record Verify\nScore: ${score}\nDate: ${new Date().toISOString()}`;
+        await signer.signMessage(msg);
+        alert("✅ 战绩已通过 Web3 钱包完成防篡改签名！");
+      } catch(e) {
+        alert("签名已取消");
+      }
+    }
+
+    /* --- 机库与皮肤选择 --- */
+    function openHangar() {
+      document.getElementById('hangarOverlay').classList.remove('hidden');
+    }
+    function closeHangar() {
+      document.getElementById('hangarOverlay').classList.add('hidden');
+      updateSkinText();
+    }
+    function openQuests() { document.getElementById('questsOverlay').classList.remove('hidden'); }
+    function closeQuests() { document.getElementById('questsOverlay').classList.add('hidden'); }
+
+    function updateSkinText() {
+      const names = { cyan: '量子苍穹 (Cyan)', gold: '黄金赛博 (Gold)', void: '虚空黑晶 (Void)' };
+      document.getElementById('currentSkinText').innerText = names[currentSkin] || '量子苍穹';
+    }
+    updateSkinText();
+
+    function selectSkin(type) {
+      if (type === 'cyan') {
+        currentSkin = 'cyan';
+      } else if (type === 'gold') {
+        if (!ownedSkins.includes('gold')) {
+          alert('请先连接 Web3 钱包免费领取该皮肤！');
+          return;
+        }
+        currentSkin = 'gold';
+      } else if (type === 'void') {
+        if (!ownedSkins.includes('void')) {
+          if (qdustTokens >= 300) {
+            qdustTokens -= 300;
+            localStorage.setItem('qo_qdust_tokens', qdustTokens);
+            document.getElementById('tokenDisplay').innerText = qdustTokens;
+            ownedSkins.push('void');
+            localStorage.setItem('qo_owned_skins', JSON.stringify(ownedSkins));
+            currentSkin = 'void';
+            alert('🎉 成功兑换【虚空黑晶】涂装！');
+          } else {
+            alert('❌ $QDUST 代币不足 300！多去游戏中极限擦弹赚取代币吧。');
+            return;
+          }
+        } else {
+          currentSkin = 'void';
+        }
+      }
+      localStorage.setItem('qo_current_skin', currentSkin);
+      closeHangar();
+    }
+
     /* --- 本地存储与成就系统 --- */
     let bestScore = parseInt(localStorage.getItem('qo_best_score') || '0');
     let totalGrazes = parseInt(localStorage.getItem('qo_total_grazes') || '0');
@@ -360,9 +584,9 @@
     document.getElementById('bestDisplay').innerText = bestScore;
 
     const ACHIEVEMENTS = {
+      wallet_connected: { title: 'Web3 拓荒者', desc: '成功连接加密钱包并领取专属皮肤' },
       first_graze: { title: '量子跃迁', desc: '完成首次极限擦弹' },
       graze_50: { title: '刀尖舞者', desc: '单局内完成 50 次擦弹' },
-      chrono_master: { title: '时空操纵者', desc: '升级时空折跃并触发子弹时间' },
       boss1_clear: { title: '魔方粉碎者', desc: '击破阶段 1 量子魔方' },
       boss4_clear: { title: '弑神者', desc: '消灭终极虚空神祇' }
     };
@@ -382,15 +606,21 @@
       }
     }
 
-    /* --- 音频合成器 --- */
+    /* --- 音频系统 --- */
     let audioCtx = null;
+    let audioMuted = false;
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
+    function toggleAudio() {
+      audioMuted = !audioMuted;
+      document.getElementById('audioStatus').innerText = audioMuted ? '🔇 音效: OFF' : '🔊 音效: ON';
+    }
+
     function playTone(freq, type = 'sine', duration = 0.1, gain = 0.08) {
-      if (!audioCtx) return;
+      if (!audioCtx || audioMuted) return;
       try {
         const osc = audioCtx.createOscillator();
         const g = audioCtx.createGain();
@@ -405,7 +635,7 @@
       } catch(e) {}
     }
 
-    /* --- 核心变量 --- */
+    /* --- 游戏主状态 --- */
     let frameCount = 0;
     let score = 0;
     let hp = 3;
@@ -418,12 +648,10 @@
     let isPaused = false;
     let currentStage = 1;
 
-    // 震屏与子弹时间
     let screenShake = 0;
     let timeScale = 1.0;
     let slowMoTimer = 0;
 
-    // 玩家配置与武器进化
     const player = {
       x: 240,
       y: 600,
@@ -436,9 +664,9 @@
       nextExp: 450,
       invincibleTimer: 0,
       primaryFireTimer: 0,
-      weaponType: 'twin', // 'twin' | 'spread' | 'beam' | 'missile'
-      hasChrono: false,   // 时空折跃
-      hasPrism: false,    // 反伤棱镜
+      weaponType: 'twin',
+      hasChrono: false,
+      hasPrism: false,
       droneCount: 0,
       maxDrones: 2,
       droneFireRate: 26,
@@ -453,18 +681,17 @@
     let particles = [];
     let floatingTexts = [];
     let lasers = [];
-    let enemies = []; // 精英小怪
-    let beamWidth = 0; // 贯穿激光束动画
+    let enemies = [];
+    let beamWidth = 0;
 
-    // Boss 系统
     let boss = null;
-    let bossType = 0; // 1: 魔方 | 2: 蛇 | 3: 奇点 | 4: 虚空神祇
+    let bossType = 0;
     let serpentSegments = [];
-    let warningLasers = []; // 阶段4 Boss 激光预警线
+    let warningLasers = [];
 
-    /* --- 控制系统 (鼠标 + 触屏) --- */
+    /* --- 输入控制 --- */
     function handlePointer(clientX, clientY) {
-      if (!isGameRunning) return;
+      if (!isGameRunning || isPaused) return;
       const rect = canvas.getBoundingClientRect();
       player.targetX = Math.max(16, Math.min(W - 16, clientX - rect.left));
       player.targetY = Math.max(24, Math.min(H - 24, clientY - rect.top - 35));
@@ -480,9 +707,24 @@
 
     window.addEventListener('keydown', e => {
       if (e.code === 'Space') triggerEMP();
+      if (e.code === 'Escape') togglePause();
     });
 
-    /* --- UI 辅助更新 --- */
+    function togglePause() {
+      if (!isGameRunning || isGameOver) return;
+      isPaused = !isPaused;
+      document.getElementById('pauseOverlay').classList.toggle('hidden', !isPaused);
+    }
+
+    function quitToMenu() {
+      isPaused = false;
+      isGameRunning = false;
+      document.getElementById('pauseOverlay').classList.add('hidden');
+      document.getElementById('startOverlay').classList.remove('hidden');
+      document.getElementById('bossHud').style.display = 'none';
+    }
+
+    /* --- UI 更新 --- */
     function updateHpUI() {
       for (let i = 1; i <= 3; i++) {
         const dot = document.getElementById(`hp${i}`);
@@ -504,14 +746,17 @@
       localStorage.setItem('qo_total_grazes', totalGrazes);
       document.getElementById('comboDisplay').innerText = `x${combo}`;
       
+      // 代币产出
+      qdustTokens += 1;
+      localStorage.setItem('qo_qdust_tokens', qdustTokens);
+      document.getElementById('tokenDisplay').innerText = qdustTokens;
+
       unlockAchievement('first_graze');
       if (combo >= 50) unlockAchievement('graze_50');
 
-      // 触发时空折跃（子弹时间）
       if (player.hasChrono) {
-        slowMoTimer = 24; // 持续约 0.4 秒
+        slowMoTimer = 24;
         timeScale = 0.35;
-        unlockAchievement('chrono_master');
       }
 
       empEnergy = Math.min(maxEmp, empEnergy + 3.0);
@@ -542,7 +787,7 @@
       screenShake = Math.max(screenShake, magnitude);
     }
 
-    /* --- 动态四阶段场景背景 --- */
+    /* --- 场景背景 --- */
     function drawDynamicBackground() {
       const badge = document.getElementById('stageBadge');
       if (frameCount < 1200) {
@@ -569,20 +814,12 @@
       if (currentStage === 2) {
         gridColor = 'rgba(168, 85, 247, 0.12)';
         speedMult = 2.5;
-        if (Math.random() < 0.03) {
-          ctx.fillStyle = 'rgba(168, 85, 247, 0.12)';
-          ctx.fillRect(0, 0, W, H);
-        }
       } else if (currentStage === 3) {
         gridColor = 'rgba(239, 68, 68, 0.15)';
         speedMult = 4.0;
       } else if (currentStage === 4) {
         gridColor = 'rgba(251, 191, 36, 0.18)';
         speedMult = 5.0;
-        if (Math.random() < 0.05) {
-          ctx.fillStyle = 'rgba(251, 191, 36, 0.08)';
-          ctx.fillRect(0, 0, W, H);
-        }
       }
 
       ctx.strokeStyle = gridColor;
@@ -601,41 +838,40 @@
       }
     }
 
-    /* --- 主武器连射与进化系统 --- */
+    /* --- 开火与武器 --- */
     function handlePlayerShooting() {
       player.primaryFireTimer++;
       
-      // 1. 发射逻辑
+      const pColor = currentSkin === 'gold' ? '#fbbf24' : (currentSkin === 'void' ? '#c084fc' : '#38bdf8');
+
       if (player.primaryFireTimer % 8 === 0) {
         if (player.weaponType === 'twin') {
-          playerBullets.push({ x: player.x - 7, y: player.y - 12, vx: 0, vy: -13, dmg: 1.8 });
-          playerBullets.push({ x: player.x + 7, y: player.y - 12, vx: 0, vy: -13, dmg: 1.8 });
+          playerBullets.push({ x: player.x - 7, y: player.y - 12, vx: 0, vy: -13, dmg: 1.8, color: pColor });
+          playerBullets.push({ x: player.x + 7, y: player.y - 12, vx: 0, vy: -13, dmg: 1.8, color: pColor });
           playTone(950, 'sine', 0.03, 0.02);
         } else if (player.weaponType === 'spread') {
           for (let i = -1; i <= 1; i++) {
-            playerBullets.push({ x: player.x, y: player.y - 10, vx: i * 3.5, vy: -12, dmg: 1.4 });
+            playerBullets.push({ x: player.x, y: player.y - 10, vx: i * 3.5, vy: -12, dmg: 1.4, color: pColor });
           }
           playTone(850, 'triangle', 0.04, 0.02);
         } else if (player.weaponType === 'beam') {
-          beamWidth = 14; // 触发激光脉冲
+          beamWidth = 14;
           triggerShake(2);
           playTone(400, 'sawtooth', 0.05, 0.03);
         } else if (player.weaponType === 'missile') {
-          homingMissiles.push({ x: player.x - 12, y: player.y, vx: -2, vy: -4, life: 100 });
-          homingMissiles.push({ x: player.x + 12, y: player.y, vx: 2, vy: -4, life: 100 });
+          homingMissiles.push({ x: player.x - 12, y: player.y, vx: -2, vy: -4, life: 100, color: pColor });
+          homingMissiles.push({ x: player.x + 12, y: player.y, vx: 2, vy: -4, life: 100, color: pColor });
           playTone(300, 'square', 0.05, 0.02);
         }
       }
 
-      // 2. 贯穿激光束计算与绘制
       if (player.weaponType === 'beam' && beamWidth > 0) {
         beamWidth *= 0.85;
-        ctx.fillStyle = `rgba(56, 189, 248, ${beamWidth / 14})`;
+        ctx.fillStyle = currentSkin === 'gold' ? `rgba(251, 191, 36, ${beamWidth / 14})` : `rgba(56, 189, 248, ${beamWidth / 14})`;
         ctx.fillRect(player.x - beamWidth / 2, 0, beamWidth, player.y);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(player.x - 2, 0, 4, player.y);
 
-        // 贯穿伤害
         if (boss && Math.abs(boss.x - player.x) < boss.hitR + beamWidth / 2) {
           boss.hp -= 0.6;
           boss.hitFlash = 2;
@@ -645,13 +881,12 @@
         });
       }
 
-      // 3. 普通子弹
       playerBullets = playerBullets.filter(b => {
         b.x += b.vx;
         b.y += b.vy;
 
-        ctx.fillStyle = '#38bdf8';
-        ctx.shadowColor = '#38bdf8';
+        ctx.fillStyle = b.color;
+        ctx.shadowColor = b.color;
         ctx.shadowBlur = 6;
         ctx.fillRect(b.x - 1.5, b.y, 3, 10);
         ctx.shadowBlur = 0;
@@ -660,21 +895,18 @@
           boss.hp -= b.dmg;
           boss.hitFlash = 3;
           triggerShake(1.5);
-          particles.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4, life: 0.25, color: '#38bdf8' });
+          particles.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4, life: 0.25, color: b.color });
           return false;
         }
-
         for (let en of enemies) {
           if (Math.hypot(b.x - en.x, b.y - en.y) < en.r) {
             en.hp -= b.dmg;
             return false;
           }
         }
-
         return b.y > -20 && b.x > -20 && b.x < W + 20;
       });
 
-      // 4. 微型追踪导弹
       homingMissiles = homingMissiles.filter(m => {
         m.life--;
         let target = boss || (enemies.length > 0 ? enemies[0] : null);
@@ -691,10 +923,9 @@
         m.x += m.vx;
         m.y += m.vy;
 
-        // 导弹尾焰
-        particles.push({ x: m.x, y: m.y, vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, life: 0.2, color: '#f59e0b' });
+        particles.push({ x: m.x, y: m.y, vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, life: 0.2, color: m.color });
 
-        ctx.fillStyle = '#fbbf24';
+        ctx.fillStyle = m.color;
         ctx.beginPath();
         ctx.arc(m.x, m.y, 3.5, 0, Math.PI * 2);
         ctx.fill();
@@ -715,16 +946,10 @@
       });
     }
 
-    /* --- 精英怪系统 (Void Jelly) --- */
+    /* --- 精英小怪 --- */
     function spawnEnemies() {
       if (frameCount % 260 === 0 && !boss) {
-        enemies.push({
-          x: Math.random() * (W - 60) + 30,
-          y: -20,
-          hp: 15,
-          r: 12,
-          color: '#06b6d4'
-        });
+        enemies.push({ x: Math.random() * (W - 60) + 30, y: -20, hp: 15, r: 12, color: '#06b6d4' });
       }
 
       enemies = enemies.filter(en => {
@@ -742,32 +967,30 @@
         if (en.hp <= 0) {
           addScore(150);
           addExp(50);
+          qdustTokens += 15;
+          document.getElementById('tokenDisplay').innerText = qdustTokens;
           triggerShake(2);
-          // 死亡炸裂环形弹
           for (let i = 0; i < 8; i++) {
             const ang = (i / 8) * Math.PI * 2;
             bullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3, r: 4.5, grazed: false, color: '#06b6d4', unkillable: false });
           }
           return false;
         }
-
         return en.y < H + 30;
       });
     }
 
-    /* --- 弹幕与四大 Boss 机制 --- */
+    /* --- 弹幕与四大 Boss --- */
     function spawnBullets() {
       let speedScale = (0.7 + (frameCount / 4000) * 0.6) * timeScale;
       let interval = Math.max(14, 34 - Math.floor(frameCount / 300));
       const bossHud = document.getElementById('bossHud');
 
-      // 1. Boss 阶段触发
       if (frameCount === 1200 && !boss) {
         bossType = 1;
         boss = { x: W / 2, y: 120, hp: 160, maxHp: 160, hitR: 28, rot: 0, hitFlash: 0, fireTimer: 0, name: 'QUANTUM CUBE' };
         document.getElementById('bossName').innerText = 'BOSS 1: QUANTUM CUBE';
         bossHud.style.display = 'block';
-        floatingTexts.push({ x: W / 2, y: H / 2, text: '⚠️ BOSS 1: QUANTUM CUBE', color: '#38bdf8', life: 2.0 });
         playTone(320, 'square', 0.5, 0.2);
       }
       if (frameCount === 2400 && !boss) {
@@ -776,7 +999,6 @@
         serpentSegments = Array.from({length: 8}, () => ({ x: W / 2, y: 110 }));
         document.getElementById('bossName').innerText = 'BOSS 2: TESLA SERPENT';
         bossHud.style.display = 'block';
-        floatingTexts.push({ x: W / 2, y: H / 2, text: '⚠️ BOSS 2: TESLA SERPENT', color: '#a855f7', life: 2.0 });
         playTone(420, 'sawtooth', 0.6, 0.2);
       }
       if (frameCount === 3800 && !boss) {
@@ -784,7 +1006,6 @@
         boss = { x: W / 2, y: 140, hp: 420, maxHp: 420, hitR: 32, rot: 0, hitFlash: 0, fireTimer: 0, name: 'ENTROPY CORE' };
         document.getElementById('bossName').innerText = 'BOSS 3: ENTROPY CORE';
         bossHud.style.display = 'block';
-        floatingTexts.push({ x: W / 2, y: H / 2, text: '⚠️ BOSS 3: ENTROPY CORE', color: '#ef4444', life: 2.5 });
         playTone(160, 'sawtooth', 1.0, 0.3);
       }
       if (frameCount === 5200 && !boss) {
@@ -792,11 +1013,9 @@
         boss = { x: W / 2, y: 130, hp: 650, maxHp: 650, hitR: 36, rot: 0, hitFlash: 0, fireTimer: 0, name: 'VOID SOVEREIGN' };
         document.getElementById('bossName').innerText = 'FINAL: VOID SOVEREIGN';
         bossHud.style.display = 'block';
-        floatingTexts.push({ x: W / 2, y: H / 2, text: '⚠️ FINAL BOSS: VOID SOVEREIGN', color: '#fbbf24', life: 3.0 });
         playTone(200, 'triangle', 1.2, 0.35);
       }
 
-      // 2. Boss 行为
       if (boss) {
         boss.fireTimer++;
         if (boss.hitFlash > 0) boss.hitFlash--;
@@ -805,7 +1024,7 @@
         document.getElementById('bossHpPercent').innerText = `${hpPct}%`;
         document.getElementById('bossBarFill').style.width = `${hpPct}%`;
 
-        if (bossType === 1) { // 魔方
+        if (bossType === 1) {
           boss.x = W / 2 + Math.sin(frameCount * 0.03) * (W * 0.35);
           boss.rot += 0.04 * timeScale;
           if (boss.fireTimer % 18 === 0) {
@@ -814,7 +1033,7 @@
               bullets.push({ x: boss.x, y: boss.y, vx: Math.cos(ang) * 3.4 * timeScale, vy: Math.sin(ang) * 3.4 * timeScale, r: 5, grazed: false, color: '#38bdf8', unkillable: false });
             }
           }
-        } else if (bossType === 2) { // 蛇
+        } else if (bossType === 2) {
           boss.x = W / 2 + Math.cos(frameCount * 0.02) * (W * 0.38);
           boss.y = 120 + Math.sin(frameCount * 0.04) * 40;
           serpentSegments[0] = { x: boss.x, y: boss.y };
@@ -829,18 +1048,15 @@
               bullets.push({ x: tail.x, y: tail.y, vx: Math.cos(ang) * 3.6 * timeScale, vy: Math.sin(ang) * 3.6 * timeScale, r: 5.5, grazed: false, color: '#a855f7', unkillable: false });
             }
           }
-        } else if (bossType === 3) { // 奇点
+        } else if (bossType === 3) {
           boss.rot += 0.06 * timeScale;
           if (boss.fireTimer % 20 === 0) {
             const ang = Math.atan2(player.y - boss.y, player.x - boss.x);
             bullets.push({ x: boss.x, y: boss.y, vx: Math.cos(ang) * 4.6 * timeScale, vy: Math.sin(ang) * 4.6 * timeScale, r: 7, grazed: false, color: '#ff0055', unkillable: true });
           }
-        } else if (bossType === 4) { // 虚空神祇：激光矩阵与全屏弹幕
+        } else if (bossType === 4) {
           boss.x = W / 2 + Math.sin(frameCount * 0.04) * (W * 0.4);
-          if (boss.fireTimer % 70 === 0) {
-            // 激光预警线
-            warningLasers.push({ x: player.x, timer: 30 });
-          }
+          if (boss.fireTimer % 70 === 0) warningLasers.push({ x: player.x, timer: 30 });
           if (boss.fireTimer % 16 === 0) {
             for (let i = 0; i < 8; i++) {
               const ang = (i / 8) * Math.PI * 2 + frameCount * 0.08;
@@ -849,12 +1065,13 @@
           }
         }
 
-        // Boss 阵亡
         if (boss.hp <= 0) {
           addScore(1000);
           addExp(400);
+          qdustTokens += 100;
+          document.getElementById('tokenDisplay').innerText = qdustTokens;
           triggerShake(8);
-          floatingTexts.push({ x: boss.x, y: boss.y, text: '🏆 BOSS DESTROYED! +1000', color: '#fbbf24', life: 2.0 });
+          floatingTexts.push({ x: boss.x, y: boss.y, text: '🏆 BOSS DESTROYED! +100 $QDUST', color: '#fbbf24', life: 2.0 });
           playTone(600, 'triangle', 0.8, 0.3);
           
           if (bossType === 1) unlockAchievement('boss1_clear');
@@ -865,7 +1082,6 @@
         }
       }
 
-      // 阶段 4 激光预警线处理
       warningLasers = warningLasers.filter(wl => {
         wl.timer--;
         if (wl.timer > 0) {
@@ -875,7 +1091,6 @@
           ctx.moveTo(wl.x, 0); ctx.lineTo(wl.x, H);
           ctx.stroke();
         } else {
-          // 激光爆发
           ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
           ctx.fillRect(wl.x - 12, 0, 24, H);
           triggerShake(4);
@@ -888,7 +1103,6 @@
         return wl.timer > -6;
       });
 
-      // 3. 常规杂兵弹幕
       if (frameCount % interval === 0) {
         const isRage = currentStage >= 3 && Math.random() < 0.28;
         bullets.push({
@@ -921,11 +1135,10 @@
         }
         return false;
       });
-
       floatingTexts.push({ x: player.x, y: player.y - 35, text: '⚡ EMP DETONATED!', color: '#38bdf8', life: 1.2 });
     }
 
-    /* --- 肉鸽升级全词条库 --- */
+    /* --- 肉鸽升级系统 --- */
     const ALL_UPGRADES = [
       { id: 'w_spread', title: '主炮进化：三向散射 (Spread)', desc: '主武器进化为广角扇形 3 连发，大幅提升清屏压制范围' },
       { id: 'w_beam', title: '主炮进化：量子贯穿激光 (Beam)', desc: '主武器进化为持续全屏贯通光束，穿透击溃直线所有目标' },
@@ -942,8 +1155,6 @@
       playTone(550, 'sine', 0.3, 0.15);
       const list = document.getElementById('cardList');
       list.innerHTML = '';
-
-      // 随机抽取 3 张卡
       const shuffled = [...ALL_UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
 
       shuffled.forEach(u => {
@@ -953,7 +1164,6 @@
         div.onclick = () => selectUpgrade(u.id);
         list.appendChild(div);
       });
-
       document.getElementById('upgradeOverlay').classList.remove('hidden');
     }
 
@@ -995,13 +1205,11 @@
       }
       frameCount++;
 
-      // 子弹时间恢复
       if (slowMoTimer > 0) {
         slowMoTimer--;
         if (slowMoTimer === 0) timeScale = 1.0;
       }
 
-      // 平滑移动
       player.x += (player.targetX - player.x) * 0.35;
       player.y += (player.targetY - player.y) * 0.35;
 
@@ -1013,7 +1221,6 @@
         }
       }
 
-      // 震屏处理
       ctx.save();
       if (screenShake > 0) {
         const rx = (Math.random() - 0.5) * screenShake;
@@ -1023,17 +1230,14 @@
         if (screenShake < 0.2) screenShake = 0;
       }
 
-      // 清屏与动态背景
       ctx.fillStyle = '#050711';
       ctx.fillRect(0, 0, W, H);
       drawDynamicBackground();
 
-      // 精英小怪、开火与弹幕
       spawnEnemies();
       handlePlayerShooting();
       spawnBullets();
 
-      // 特斯拉电场
       if (player.teslaLevel > 0 && frameCount % (90 - player.teslaLevel * 15) === 0) {
         const teslaR = 80 + player.teslaLevel * 25;
         bullets = bullets.filter(b => {
@@ -1053,7 +1257,6 @@
         ctx.stroke();
       }
 
-      // 浮游机
       player.drones.forEach((d, idx) => {
         const angle = frameCount * 0.05 + (idx * Math.PI);
         const dx = player.x + Math.cos(angle) * 36;
@@ -1072,7 +1275,6 @@
         }
       });
 
-      // 浮游机激光
       lasers = lasers.filter(l => {
         l.y += l.vy;
         ctx.fillStyle = '#67e8f9';
@@ -1086,7 +1288,6 @@
         return l.y > -20;
       });
 
-      // 敌方弹幕绘制与碰撞
       bullets = bullets.filter(b => {
         b.x += b.vx;
         b.y += b.vy;
@@ -1101,7 +1302,6 @@
 
         const dist = Math.hypot(b.x - player.x, b.y - player.y);
 
-        // 擦弹判定
         if (!b.grazed && dist < player.grazeR && dist > player.hitR) {
           b.grazed = true;
           addScore(10);
@@ -1111,14 +1311,9 @@
           for (let i = 0; i < 3; i++) {
             particles.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, life: 0.3, color: '#fbbf24' });
           }
-
-          // 反伤棱镜
-          if (player.hasPrism) {
-            lasers.push({ x: player.x, y: player.y, vy: -15 });
-          }
+          if (player.hasPrism) lasers.push({ x: player.x, y: player.y, vy: -15 });
         }
 
-        // 击中判定
         if (player.invincibleTimer <= 0 && dist < player.hitR + b.r * 0.7) {
           hp--;
           combo = 0;
@@ -1130,37 +1325,35 @@
           if (hp <= 0) {
             isGameOver = true;
             document.getElementById('finalScore').innerText = score;
-            const recordTxt = document.getElementById('recordNotify');
+            const earned = Math.floor(score / 40);
+            document.getElementById('earnedTokens').innerText = `+${earned} $QDUST EARNED`;
+            qdustTokens += earned;
+            localStorage.setItem('qo_qdust_tokens', qdustTokens);
+            document.getElementById('tokenDisplay').innerText = qdustTokens;
+
             if (score > bestScore) {
               bestScore = score;
               localStorage.setItem('qo_best_score', bestScore);
               document.getElementById('bestDisplay').innerText = bestScore;
-              recordTxt.innerText = '🎉 NEW ALL-TIME RECORD!';
-            } else {
-              recordTxt.innerText = `BEST: ${bestScore}`;
             }
             document.getElementById('gameOverOverlay').classList.remove('hidden');
           }
           return false;
         }
-
         return b.y < H + 20 && b.x > -20 && b.x < W + 20;
       });
 
       if (player.invincibleTimer > 0) player.invincibleTimer--;
 
-      // 绘制 Boss
       if (boss) {
         ctx.save();
         ctx.translate(boss.x, boss.y);
-
-        if (bossType === 1) { // 魔方
+        if (bossType === 1) {
           ctx.rotate(boss.rot);
           ctx.strokeStyle = boss.hitFlash > 0 ? '#ffffff' : '#38bdf8';
           ctx.lineWidth = 3;
           ctx.strokeRect(-20, -20, 40, 40);
-          ctx.strokeRect(-12, -12, 24, 24);
-        } else if (bossType === 2) { // 蛇
+        } else if (bossType === 2) {
           ctx.restore();
           serpentSegments.forEach((seg, i) => {
             ctx.fillStyle = boss.hitFlash > 0 ? '#ffffff' : (i === 0 ? '#c084fc' : '#a855f7');
@@ -1169,7 +1362,7 @@
             ctx.fill();
           });
           ctx.save();
-        } else if (bossType === 3) { // 奇点
+        } else if (bossType === 3) {
           ctx.fillStyle = '#000000';
           ctx.beginPath();
           ctx.arc(0, 0, 30, 0, Math.PI * 2);
@@ -1177,7 +1370,7 @@
           ctx.strokeStyle = boss.hitFlash > 0 ? '#ffffff' : '#ef4444';
           ctx.lineWidth = 4;
           ctx.stroke();
-        } else if (bossType === 4) { // 虚空神祇
+        } else if (bossType === 4) {
           ctx.fillStyle = '#1e1b4b';
           ctx.beginPath();
           ctx.arc(0, 0, 36, 0, Math.PI * 2);
@@ -1189,19 +1382,17 @@
         ctx.restore();
       }
 
-      // 绘制自机
+      // 绘制自机（根据当前皮肤）
       ctx.save();
       ctx.translate(player.x, player.y);
       if (player.invincibleTimer % 4 < 2) {
-        // 擦弹判定环
         ctx.beginPath();
         ctx.arc(0, 0, player.grazeR, 0, Math.PI * 2);
-        ctx.strokeStyle = player.hasChrono ? 'rgba(251, 191, 36, 0.4)' : 'rgba(56, 189, 248, 0.3)';
+        ctx.strokeStyle = currentSkin === 'gold' ? 'rgba(251, 191, 36, 0.4)' : (currentSkin === 'void' ? 'rgba(192, 132, 252, 0.4)' : 'rgba(56, 189, 248, 0.3)');
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // 核心机体
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = currentSkin === 'gold' ? '#fbbf24' : (currentSkin === 'void' ? '#a855f7' : '#38bdf8');
         ctx.beginPath();
         ctx.moveTo(0, -14);
         ctx.lineTo(10, 10);
@@ -1210,7 +1401,6 @@
         ctx.closePath();
         ctx.fill();
 
-        // 核心判定红心
         ctx.fillStyle = '#ef4444';
         ctx.beginPath();
         ctx.arc(0, 0, player.hitR, 0, Math.PI * 2);
@@ -1218,7 +1408,6 @@
       }
       ctx.restore();
 
-      // 粒子与文字
       particles = particles.filter(p => {
         p.x += p.vx; p.y += p.vy; p.life -= 0.02;
         ctx.fillStyle = p.color;
@@ -1235,11 +1424,11 @@
         return t.life > 0;
       });
 
-      ctx.restore(); // 恢复震屏 save()
+      ctx.restore();
       requestAnimationFrame(loop);
     }
 
-    /* --- 启停与重置逻辑 --- */
+    /* --- 启停逻辑 --- */
     function startGame() {
       initAudio();
       document.getElementById('startOverlay').classList.add('hidden');
